@@ -6,7 +6,7 @@ import BottomSheet from '../components/BottomSheet';
 import './Accounts.css';
 
 const ACCOUNT_ICONS = ['💵', '🏦', '📱', '💳', '🪙', '💰', '🏧', '👛'];
-const ACCOUNT_COLORS = ['#6FFBBE', '#6366f1', '#ec4899', '#f59e0b', '#06b6d4', '#8b5cf6', '#ef4444', '#84cc16'];
+const ACCOUNT_COLORS = ['var(--color-income)', '#6366f1', '#ec4899', '#f59e0b', '#06b6d4', '#8b5cf6', '#ef4444', '#84cc16'];
 
 const renderIcon = (ic) => {
   const sf = { width: 22, height: 22, fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round" };

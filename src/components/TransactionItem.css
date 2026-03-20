@@ -69,9 +69,9 @@
 }
 
 .status-badge.cleared {
-  background: rgba(111, 251, 190, 0.1);
-  color: #6FFBBE;
-  border: 1px solid rgba(111, 251, 190, 0.2);
+  background: var(--color-income-light);
+  color: var(--color-income);
+  border: 1px solid var(--color-income-light);
 }
 
 .status-badge.pending {

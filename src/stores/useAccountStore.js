@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 const DEFAULT_ACCOUNTS = [
-  { id: 'cash', name: 'Cash', icon: '💵', balance: 0, color: '#10b981' },
+  { id: 'cash', name: 'Cash', icon: '💵', balance: 0, color: '#0F172A' },
   { id: 'bank', name: 'Bank', icon: '🏦', balance: 0, color: '#6366f1' },
   { id: 'mobile', name: 'Mobile Banking', icon: '📱', balance: 0, color: '#ec4899' },
   { id: 'card', name: 'Card', icon: '💳', balance: 0, color: '#f59e0b' },

@@ -17,26 +17,26 @@
   --color-text-primary: #0F172A;
   --color-text-secondary: #64748B;
   --color-text-muted: #9ca3af;
-  --color-text-inverse: #0F172A;
-  /* Dark text on neon green buttons */
+  --color-text-inverse: #FFFFFF;
+  /* White text on deep slate buttons */
 
-  --color-accent: #6FFBBE;
-  --color-accent-hover: #5ce6aa;
-  --color-accent-light: rgba(111, 251, 190, 0.15);
-  --color-accent-gradient: linear-gradient(135deg, #6FFBBE, #20c997);
+  --color-accent: #000000;
+  --color-accent-hover: #171717;
+  --color-accent-light: rgba(0, 0, 0, 0.08);
+  --color-accent-gradient: linear-gradient(135deg, #000000, #262626);
 
-  --color-income: #6FFBBE;
-  --color-income-light: rgba(111, 251, 190, 0.15);
-  --color-expense: #ff6b6b;
-  --color-expense-light: rgba(255, 107, 107, 0.12);
-  --color-transfer: #94a3b8;
-  --color-transfer-light: rgba(148, 163, 184, 0.12);
+  --color-income: #000000;
+  --color-income-light: rgba(0, 0, 0, 0.08);
+  --color-expense: #ff4d4d;
+  --color-expense-light: rgba(255, 77, 77, 0.1);
+  --color-transfer: #737373;
+  --color-transfer-light: rgba(115, 115, 115, 0.1);
 
-  --color-warning: #f59e0b;
-  --color-warning-light: rgba(245, 158, 11, 0.12);
-  --color-danger: #ff6b6b;
-  --color-danger-light: rgba(255, 107, 107, 0.12);
-  --color-success: #6FFBBE;
+  --color-warning: #d97706;
+  --color-warning-light: rgba(217, 119, 6, 0.1);
+  --color-danger: #ff4d4d;
+  --color-danger-light: rgba(255, 77, 77, 0.1);
+  --color-success: #000000;
 
   --color-border: rgba(15, 23, 42, 0.06);
   --color-shadow: rgba(15, 23, 42, 0.04);
@@ -105,9 +105,17 @@
   --color-text-inverse: #0F172A;
   /* Retain dark text on neon buttons in dark mode */
 
-  --color-border: rgba(247, 249, 251, 0.05);
-  /* Very subtle white border */
+  --color-border: rgba(247, 249, 251, 0.05); /* Very subtle white border */
   --color-shadow: rgba(0, 0, 0, 0.4);
+
+  /* Restore Neon Emerald for Dark Mode */
+  --color-accent: #6FFBBE;
+  --color-accent-hover: #5ce6aa;
+  --color-accent-light: rgba(111, 251, 190, 0.15);
+  --color-accent-gradient: linear-gradient(135deg, #6FFBBE, #20c997);
+  --color-income: #6FFBBE;
+  --color-income-light: rgba(111, 251, 190, 0.15);
+  --color-success: #6FFBBE;
 }
 
 /* ── Reset & Global ── */
