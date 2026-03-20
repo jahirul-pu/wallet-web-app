@@ -63,6 +63,15 @@ export const useAccountStore = create(
         }));
       },
 
+      reorderAccounts: (fromIndex, toIndex) => {
+        set((state) => {
+          const newAccounts = [...state.accounts];
+          const [moved] = newAccounts.splice(fromIndex, 1);
+          newAccounts.splice(toIndex, 0, moved);
+          return { accounts: newAccounts };
+        });
+      },
+
       getTotalBalance: () => {
         return get().accounts.reduce((sum, a) => sum + a.balance, 0);
       },

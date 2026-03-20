@@ -26,24 +26,50 @@ const renderIcon = (ic) => {
 export default function Accounts() {
   const accounts = useAccountStore((s) => s.accounts);
   const addAccount = useAccountStore((s) => s.addAccount);
+  const updateAccount = useAccountStore((s) => s.updateAccount);
   const deleteAccount = useAccountStore((s) => s.deleteAccount);
   const getTotalBalance = useAccountStore((s) => s.getTotalBalance);
   const transfer = useAccountStore((s) => s.transfer);
+  const reorderAccounts = useAccountStore((s) => s.reorderAccounts);
   const currency = useSettingsStore((s) => s.currency);
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showTransferSheet, setShowTransferSheet] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('💵');
   const [newColor, setNewColor] = useState('#10b981');
+  
   const [fromAcc, setFromAcc] = useState('');
   const [toAcc, setToAcc] = useState('');
   const [transferAmt, setTransferAmt] = useState('');
 
-  const handleAddAccount = () => {
-    if (!newName.trim()) return;
-    addAccount({ name: newName, icon: newIcon, color: newColor });
+  const openAddSheet = () => {
+    setEditingId(null);
     setNewName('');
+    setNewIcon('💵');
+    setNewColor('#10b981');
+    setShowAddSheet(true);
+  };
+
+  const openEditSheet = (acc) => {
+    setEditingId(acc.id);
+    setNewName(acc.name);
+    setNewIcon(acc.icon);
+    setNewColor(acc.color || '#10b981');
+    setShowAddSheet(true);
+  };
+
+  const handleSaveAccount = () => {
+    if (!newName.trim()) return;
+    if (editingId) {
+      updateAccount(editingId, { name: newName, icon: newIcon, color: newColor });
+    } else {
+      addAccount({ name: newName, icon: newIcon, color: newColor });
+    }
+    setNewName('');
+    setEditingId(null);
     setShowAddSheet(false);
   };
 
@@ -68,9 +94,9 @@ export default function Accounts() {
 
       {/* Account list */}
       <div className="accounts-list">
-        {accounts.map((acc) => (
+        {accounts.map((acc, index) => (
           <div key={acc.id} className="account-card card">
-            <div className="account-card-left">
+            <div className="account-card-left" onClick={() => openEditSheet(acc)} style={{ cursor: 'pointer', flex: 1 }}>
               <div
                 className="account-card-icon"
                 style={{ background: `${acc.color}18`, color: acc.color }}
@@ -87,22 +113,47 @@ export default function Accounts() {
                 </div>
               </div>
             </div>
-            {!['cash', 'bank', 'mobile', 'card'].includes(acc.id) && (
+            
+            <div className="account-card-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="account-card-reorder" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <button 
+                  className="btn-icon" 
+                  onClick={() => reorderAccounts(index, index - 1)}
+                  disabled={index === 0}
+                  style={{ padding: '2px', opacity: index === 0 ? 0.3 : 1, background: 'none', border: 'none', cursor: index === 0 ? 'default' : 'pointer', color: 'var(--color-text-secondary)' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </button>
+                <button 
+                  className="btn-icon" 
+                  onClick={() => reorderAccounts(index, index + 1)}
+                  disabled={index === accounts.length - 1}
+                  style={{ padding: '2px', opacity: index === accounts.length - 1 ? 0.3 : 1, background: 'none', border: 'none', cursor: index === accounts.length - 1 ? 'default' : 'pointer', color: 'var(--color-text-secondary)' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+              </div>
+
               <button
                 className="btn btn-icon btn-secondary"
-                onClick={() => deleteAccount(acc.id)}
+                onClick={() => {
+                  if (window.confirm('Delete this wallet? Transferred transactions might lose reference.')) {
+                    deleteAccount(acc.id);
+                  }
+                }}
                 style={{ fontSize: 'var(--text-sm)', padding: '10px' }}
+                disabled={accounts.length === 1}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
               </button>
-            )}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Action buttons */}
       <div className="accounts-actions">
-        <button className="btn btn-primary" onClick={() => setShowAddSheet(true)} id="add-account-btn">
+        <button className="btn btn-primary" onClick={openAddSheet} id="add-account-btn">
           + Add Wallet
         </button>
         <button className="btn btn-secondary" onClick={() => {
@@ -116,7 +167,7 @@ export default function Accounts() {
       </div>
 
       {/* Add Account Sheet */}
-      <BottomSheet isOpen={showAddSheet} onClose={() => setShowAddSheet(false)} title="Add Wallet">
+      <BottomSheet isOpen={showAddSheet} onClose={() => setShowAddSheet(false)} title={editingId ? "Edit Wallet" : "Add Wallet"}>
         <div className="sheet-form">
           <div className="input-group">
             <label>Name</label>
@@ -138,7 +189,9 @@ export default function Accounts() {
               ))}
             </div>
           </div>
-          <button className="btn btn-primary submit-btn" onClick={handleAddAccount}>Add Wallet</button>
+          <button className="btn btn-primary submit-btn" onClick={handleSaveAccount}>
+            {editingId ? 'Save Wallet Changes' : 'Add Wallet'}
+          </button>
         </div>
       </BottomSheet>
 

@@ -32,8 +32,8 @@ export const formatAmount = (amount, currencyCode = DEFAULT_CURRENCY) => {
   const num = Number(amount);
   if (isNaN(num)) return `${currency.symbol}0`;
 
-  // Format with commas
-  const formatted = new Intl.NumberFormat(currency.locale, {
+  // Format with commas using en-US for English digits across all currencies
+  const formatted = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : 2,
     maximumFractionDigits: currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : 2,
   }).format(Math.abs(num));
