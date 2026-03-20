@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import './Sidebar.css';
 
@@ -17,7 +17,8 @@ const MENU_ITEMS = [
 ];
 
 export default function Sidebar() {
-  const signOut = useAuthStore((s) => s.signOut);
+  const navigate = useNavigate();
+  const logOut = useAuthStore((s) => s.logOut);
   const user = useAuthStore((s) => s.user);
 
   return (
@@ -40,11 +41,11 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <a href="#!" className="sidebar-footer-link">Support & Security</a>
         {user ? (
-          <button className="sidebar-logout" onClick={() => signOut()}>
+          <button className="sidebar-logout" onClick={() => logOut()}>
             Secure Logout
           </button>
         ) : (
-          <button className="sidebar-logout" onClick={() => window.location.href='/settings'}>
+          <button className="sidebar-logout" onClick={() => navigate('/login')}>
             Sign In
           </button>
         )}

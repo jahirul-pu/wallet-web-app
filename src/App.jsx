@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useSettingsStore } from './stores/useSettingsStore';
 import { useAuthStore } from './stores/useAuthStore';
@@ -15,10 +15,15 @@ import Budgets from './pages/Budgets';
 import Debts from './pages/Debts';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 import './App.css';
 
 import Sidebar from './components/Sidebar';
 import TopNav from './components/TopNav';
+
+/** Auth pages are rendered full-screen (no sidebar / nav). */
+const AUTH_PATHS = ['/login', '/signup'];
 
 function AppContent() {
   const location = useLocation();
@@ -44,16 +49,19 @@ function AppContent() {
     return () => { if (unsub) unsub(); };
   }, [initAuth]);
 
-  // Hide bottom nav on /add page for mobile views
-  const hideNav = location.pathname.startsWith('/add');
+  const isAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/signup');
+  const hideNav = location.pathname.startsWith('/add') || isAuthPage;
 
   return (
     <>
-      <Sidebar />
-      <div className="app-main">
-        <TopNav />
-        <main className="app-content">
+      {!isAuthPage && <Sidebar />}
+      <div className={isAuthPage ? "" : "app-main"} style={isAuthPage ? { width: '100%' } : {}}>
+        {!isAuthPage && <TopNav />}
+        <main className={isAuthPage ? "" : "app-content"}>
           <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
             <Route path="/" element={<Dashboard />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/add" element={<AddTransaction />} />
@@ -62,6 +70,8 @@ function AppContent() {
             <Route path="/debts" element={<Debts />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
+            
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         {!hideNav && <BottomNav />}
