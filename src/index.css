@@ -17,7 +17,8 @@
   --color-text-primary: #0F172A;
   --color-text-secondary: #64748B;
   --color-text-muted: #9ca3af;
-  --color-text-inverse: #0F172A; /* Dark text on neon green buttons */
+  --color-text-inverse: #0F172A;
+  /* Dark text on neon green buttons */
 
   --color-accent: #6FFBBE;
   --color-accent-hover: #5ce6aa;
@@ -90,7 +91,8 @@
 
 /* ── Dark Theme ── */
 [data-theme="dark"] {
-  --color-bg-primary: #0b1121; /* Slightly darker than 0F172A for contrast against cards */
+  --color-bg-primary: #0b1121;
+  /* Slightly darker than 0F172A for contrast against cards */
   --color-bg-secondary: #0F172A;
   --color-bg-card: rgba(15, 23, 42, 0.85);
   --color-bg-glass: rgba(15, 23, 42, 0.65);
@@ -100,9 +102,11 @@
   --color-text-primary: #F7F9FB;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #64748b;
-  --color-text-inverse: #0F172A; /* Retain dark text on neon buttons in dark mode */
+  --color-text-inverse: #0F172A;
+  /* Retain dark text on neon buttons in dark mode */
 
-  --color-border: rgba(247, 249, 251, 0.05); /* Very subtle white border */
+  --color-border: rgba(247, 249, 251, 0.05);
+  /* Very subtle white border */
   --color-shadow: rgba(0, 0, 0, 0.4);
 }
 
@@ -151,7 +155,9 @@ button {
   color: inherit;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
@@ -160,7 +166,8 @@ input, select, textarea {
   background: none;
 }
 
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -185,6 +192,7 @@ img {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -330,7 +338,8 @@ img {
   width: 100%;
   padding: 14px var(--space-4);
   background: var(--color-bg-input);
-  border: 1px solid transparent; /* Borderless Vault feel */
+  border: 1px solid transparent;
+  /* Borderless Vault feel */
   border-radius: var(--radius-md);
   font-size: var(--text-base);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
@@ -449,44 +458,109 @@ img {
 
 /* ── Animations ── */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-.animate-fade-in { animation: fadeIn var(--transition-base) ease; }
-.animate-slide-up { animation: slideUp var(--transition-slow); }
-.animate-slide-down { animation: slideDown var(--transition-slow); }
-.animate-scale-in { animation: scaleIn var(--transition-slow); }
+.animate-fade-in {
+  animation: fadeIn var(--transition-base) ease;
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-slow);
+}
+
+.animate-slide-down {
+  animation: slideDown var(--transition-slow);
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--transition-slow);
+}
 
 /* ── Staggered Animations ── */
-.stagger-1 { animation-delay: 50ms; }
-.stagger-2 { animation-delay: 100ms; }
-.stagger-3 { animation-delay: 150ms; }
-.stagger-4 { animation-delay: 200ms; }
-.stagger-5 { animation-delay: 250ms; }
-.stagger-6 { animation-delay: 300ms; }
-.stagger-7 { animation-delay: 350ms; }
-.stagger-8 { animation-delay: 400ms; }
+.stagger-1 {
+  animation-delay: 50ms;
+}
+
+.stagger-2 {
+  animation-delay: 100ms;
+}
+
+.stagger-3 {
+  animation-delay: 150ms;
+}
+
+.stagger-4 {
+  animation-delay: 200ms;
+}
+
+.stagger-5 {
+  animation-delay: 250ms;
+}
+
+.stagger-6 {
+  animation-delay: 300ms;
+}
+
+.stagger-7 {
+  animation-delay: 350ms;
+}
+
+.stagger-8 {
+  animation-delay: 400ms;
+}
 
 .animate-stagger {
   opacity: 0;
@@ -503,7 +577,7 @@ img {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at var(--tap-x, 50%) var(--tap-y, 50%), rgba(255,255,255,0.12) 0%, transparent 60%);
+  background: radial-gradient(circle at var(--tap-x, 50%) var(--tap-y, 50%), rgba(255, 255, 255, 0.12) 0%, transparent 60%);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -550,12 +624,10 @@ img {
 
 /* ── Skeleton loader ── */
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-bg-input) 25%,
-    var(--color-bg-glass) 50%,
-    var(--color-bg-input) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--color-bg-input) 25%,
+      var(--color-bg-glass) 50%,
+      var(--color-bg-input) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease infinite;
   border-radius: var(--radius-sm);

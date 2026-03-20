@@ -50,12 +50,12 @@ export default function BalanceCard({ balance, income, expense }) {
 
         <div className="vault-assets-right">
           <svg className="vault-trend-line" viewBox="0 0 100 40" preserveAspectRatio="none">
-            <path d="M0 35 L15 25 L30 30 L45 15 L60 20 L75 5 L100 10" fill="none" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M0 35 L15 25 L30 30 L45 15 L60 20 L75 5 L100 10" fill="none" stroke="#6FFBBE" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M0 35 L15 25 L30 30 L45 15 L60 20 L75 5 L100 10 L100 40 L0 40 Z" fill="url(#trend-gradient)" stroke="none"/>
             <defs>
               <linearGradient id="trend-gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.3"/>
-                <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0"/>
+                <stop offset="0%" stopColor="#6FFBBE" stopOpacity="0.3"/>
+                <stop offset="100%" stopColor="#6FFBBE" stopOpacity="0"/>
               </linearGradient>
             </defs>
           </svg>
