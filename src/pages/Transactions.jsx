@@ -1,0 +1,98 @@
+import { useState, useMemo } from 'react';
+import { useTransactionStore } from '../stores/useTransactionStore';
+import TransactionItem from '../components/TransactionItem';
+import './Transactions.css';
+
+export default function Transactions() {
+  const transactions = useTransactionStore((s) => s.transactions);
+  const deleteTransaction = useTransactionStore((s) => s.deleteTransaction);
+
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('all');
+
+  const filtered = useMemo(() => {
+    let list = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (filterType !== 'all') {
+      list = list.filter((t) => t.type === filterType);
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (t) =>
+          (t.note || '').toLowerCase().includes(q) ||
+          (t.category || '').toLowerCase().includes(q) ||
+          String(t.amount).includes(q)
+      );
+    }
+
+    return list;
+  }, [transactions, search, filterType]);
+
+  // Group by date
+  const grouped = useMemo(() => {
+    const groups = {};
+    filtered.forEach((t) => {
+      const key = t.date;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    });
+    return Object.entries(groups).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+  }, [filtered]);
+
+  return (
+    <div className="page" id="transactions-page">
+      <h1 className="page-title">Transactions</h1>
+
+      {/* Search */}
+      <div className="search-bar">
+        <span className="search-icon">🔍</span>
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search transactions..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          id="search-input"
+        />
+      </div>
+
+      {/* Filter chips */}
+      <div className="filter-chips">
+        {['all', 'income', 'expense', 'transfer'].map((t) => (
+          <button
+            key={t}
+            className={`filter-chip ${filterType === t ? 'active' : ''}`}
+            onClick={() => setFilterType(t)}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Transaction list */}
+      {grouped.length > 0 ? (
+        grouped.map(([date, txns]) => (
+          <div key={date} className="transaction-group">
+            <div className="transaction-group-date">{new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+            <div className="card" style={{ padding: 'var(--space-2)' }}>
+              {txns.map((txn) => (
+                <TransactionItem
+                  key={txn.id}
+                  transaction={txn}
+                  onDelete={deleteTransaction}
+                />
+              ))}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="empty-state">
+          <div className="icon">📋</div>
+          <p>{search ? 'No transactions found' : 'No transactions yet'}</p>
+        </div>
+      )}
+    </div>
+  );
+}

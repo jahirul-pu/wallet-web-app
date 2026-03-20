@@ -1,0 +1,127 @@
+.accounts-total {
+  margin-bottom: var(--space-6);
+  text-align: center;
+  position: relative;
+}
+
+.accounts-total-label {
+  font-size: var(--text-sm);
+  opacity: 0.85;
+  margin-bottom: var(--space-1);
+  position: relative;
+  z-index: 1;
+}
+
+.accounts-total-amount {
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.account-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.account-card-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.account-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+.account-card-name {
+  font-weight: 600;
+  font-size: var(--text-base);
+}
+
+.account-card-balance {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  margin-top: 2px;
+}
+
+.accounts-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.accounts-actions .btn {
+  flex: 1;
+}
+
+.sheet-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.icon-picker {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.icon-option {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  border: 2px solid transparent;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.icon-option.active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+.color-picker {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.color-option {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.color-option.active {
+  border-color: var(--color-text-primary);
+  transform: scale(1.15);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: var(--space-4);
+  margin-top: var(--space-2);
+}

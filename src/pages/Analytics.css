@@ -1,0 +1,47 @@
+.analytics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.analytics-section {
+  margin-bottom: var(--space-6);
+}
+
+.analytics-section-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+.analytics-chart {
+  padding: var(--space-5);
+}
+
+.debt-analytics-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.debt-analytics-card {
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.debt-analytics-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.debt-analytics-value {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.debt-analytics-value.income { color: var(--color-income); }
+.debt-analytics-value.expense { color: var(--color-expense); }

@@ -1,0 +1,82 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+const DEFAULT_ACCOUNTS = [
+  { id: 'cash', name: 'Cash', icon: '💵', balance: 0, color: '#10b981' },
+  { id: 'bank', name: 'Bank', icon: '🏦', balance: 0, color: '#6366f1' },
+  { id: 'mobile', name: 'Mobile Banking', icon: '📱', balance: 0, color: '#ec4899' },
+  { id: 'card', name: 'Card', icon: '💳', balance: 0, color: '#f59e0b' },
+];
+
+export const useAccountStore = create(
+  persist(
+    (set, get) => ({
+      accounts: DEFAULT_ACCOUNTS,
+
+      addAccount: (data) => {
+        const account = {
+          id: generateId(),
+          balance: 0,
+          ...data,
+        };
+        set((state) => ({
+          accounts: [...state.accounts, account],
+        }));
+        return account;
+      },
+
+      updateAccount: (id, data) => {
+        set((state) => ({
+          accounts: state.accounts.map((a) =>
+            a.id === id ? { ...a, ...data } : a
+          ),
+        }));
+      },
+
+      deleteAccount: (id) => {
+        set((state) => ({
+          accounts: state.accounts.filter((a) => a.id !== id),
+        }));
+      },
+
+      adjustBalance: (id, amount, type) => {
+        set((state) => ({
+          accounts: state.accounts.map((a) => {
+            if (a.id !== id) return a;
+            if (type === 'income') return { ...a, balance: a.balance + amount };
+            if (type === 'expense') return { ...a, balance: a.balance - amount };
+            return a;
+          }),
+        }));
+      },
+
+      transfer: (fromId, toId, amount) => {
+        const amt = Number(amount);
+        set((state) => ({
+          accounts: state.accounts.map((a) => {
+            if (a.id === fromId) return { ...a, balance: a.balance - amt };
+            if (a.id === toId) return { ...a, balance: a.balance + amt };
+            return a;
+          }),
+        }));
+      },
+
+      getTotalBalance: () => {
+        return get().accounts.reduce((sum, a) => sum + a.balance, 0);
+      },
+
+      getAccount: (id) => {
+        return get().accounts.find((a) => a.id === id);
+      },
+
+      clearAll: () => set({ accounts: DEFAULT_ACCOUNTS }),
+
+      importAccounts: (data) => set({ accounts: data }),
+    }),
+    {
+      name: 'wallet-accounts',
+    }
+  )
+);

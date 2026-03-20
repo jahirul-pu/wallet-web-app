@@ -1,0 +1,75 @@
+.add-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.type-selector {
+  display: flex;
+  gap: var(--space-2);
+  background: var(--color-bg-input);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+}
+
+.type-btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  transition: all var(--transition-fast);
+  color: var(--color-text-muted);
+}
+
+.type-btn.active.income {
+  background: var(--color-income-light);
+  color: var(--color-income);
+}
+
+.type-btn.active.expense {
+  background: var(--color-expense-light);
+  color: var(--color-expense);
+}
+
+.type-btn.active.transfer {
+  background: var(--color-transfer-light);
+  color: var(--color-transfer);
+}
+
+.amount-input-container {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.amount-input {
+  font-family: var(--font-heading);
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  text-align: center;
+  width: 100%;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.amount-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: var(--space-4);
+  font-size: var(--text-base);
+  margin-top: var(--space-4);
+}

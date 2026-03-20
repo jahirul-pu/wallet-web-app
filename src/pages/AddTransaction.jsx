@@ -1,0 +1,174 @@
+import { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTransactionStore } from '../stores/useTransactionStore';
+import { useAccountStore } from '../stores/useAccountStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
+import CategoryPicker from '../components/CategoryPicker';
+import { toInputDate } from '../utils/dateFormat';
+import './AddTransaction.css';
+
+export default function AddTransaction() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const addTransaction = useTransactionStore((s) => s.addTransaction);
+  const accounts = useAccountStore((s) => s.accounts);
+  const adjustBalance = useAccountStore((s) => s.adjustBalance);
+  const transfer = useAccountStore((s) => s.transfer);
+
+  const initialType = searchParams.get('type') || 'expense';
+
+  const [type, setType] = useState(initialType);
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+  const [date, setDate] = useState(toInputDate());
+  const [note, setNote] = useState('');
+  const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+  const [toAccountId, setToAccountId] = useState(accounts[1]?.id || '');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!amount || Number(amount) <= 0) return;
+
+    if (type === 'transfer') {
+      if (accountId === toAccountId) return;
+      transfer(accountId, toAccountId, Number(amount));
+      addTransaction({
+        type: 'transfer',
+        amount: Number(amount),
+        category: 'transfer',
+        date,
+        note: note || `Transfer: ${getAccountName(accountId)} → ${getAccountName(toAccountId)}`,
+        accountId,
+        toAccountId,
+      });
+    } else {
+      if (!category) return;
+      addTransaction({ type, amount: Number(amount), category, date, note, accountId });
+      adjustBalance(accountId, Number(amount), type);
+    }
+
+    navigate(-1);
+  };
+
+  const getAccountName = (id) => accounts.find((a) => a.id === id)?.name || '';
+
+  return (
+    <div className="page" id="add-transaction-page">
+      <div className="add-header">
+        <button className="btn btn-icon btn-secondary" onClick={() => navigate(-1)}>
+          ←
+        </button>
+        <h1 className="page-title" style={{ margin: 0 }}>
+          {type === 'transfer' ? 'Transfer' : `Add ${type === 'income' ? 'Income' : 'Expense'}`}
+        </h1>
+        <div style={{ width: 44 }} />
+      </div>
+
+      {/* Type selector */}
+      <div className="type-selector">
+        {['income', 'expense', 'transfer'].map((t) => (
+          <button
+            key={t}
+            className={`type-btn ${type === t ? `active ${t}` : ''}`}
+            onClick={() => { setType(t); setCategory(''); }}
+            type="button"
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="add-form">
+        {/* Amount */}
+        <div className="amount-input-container">
+          <input
+            type="number"
+            className="amount-input"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            min="0"
+            step="0.01"
+            autoFocus
+            id="amount-input"
+          />
+        </div>
+
+        {/* Account */}
+        <div className="input-group">
+          <label>{type === 'transfer' ? 'From Account' : 'Account'}</label>
+          <select
+            className="select"
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            id="account-select"
+          >
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.icon} {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* To account (transfer only) */}
+        {type === 'transfer' && (
+          <div className="input-group">
+            <label>To Account</label>
+            <select
+              className="select"
+              value={toAccountId}
+              onChange={(e) => setToAccountId(e.target.value)}
+              id="to-account-select"
+            >
+              {accounts
+                .filter((a) => a.id !== accountId)
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.icon} {a.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+
+        {/* Category (not for transfers) */}
+        {type !== 'transfer' && (
+          <div className="input-group">
+            <label>Category</label>
+            <CategoryPicker type={type} value={category} onChange={setCategory} />
+          </div>
+        )}
+
+        {/* Date */}
+        <div className="input-group">
+          <label>Date</label>
+          <input
+            type="date"
+            className="input"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            id="date-input"
+          />
+        </div>
+
+        {/* Note */}
+        <div className="input-group">
+          <label>Note (optional)</label>
+          <input
+            type="text"
+            className="input"
+            placeholder="Add a note..."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            id="note-input"
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary submit-btn" id="submit-btn">
+          {type === 'transfer' ? 'Transfer' : 'Save Transaction'}
+        </button>
+      </form>
+    </div>
+  );
+}
