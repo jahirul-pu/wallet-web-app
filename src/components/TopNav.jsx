@@ -3,7 +3,7 @@ import './TopNav.css';
 
 export default function TopNav() {
   const user = useAuthStore((s) => s.user);
-  const userInitial = user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
+  const userInitial = (user?.displayName || user?.email || 'U').charAt(0).toUpperCase();
 
   return (
     <header className="app-topnav">
