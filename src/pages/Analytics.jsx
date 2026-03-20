@@ -116,7 +116,8 @@ export default function Analytics() {
       <div className="analytics-header">
         <h1 className="page-title" style={{ margin: 0 }}>Analytics</h1>
         <button className="btn btn-secondary" onClick={handleExport} id="export-csv-btn">
-          📥 Export CSV
+          <svg style={{marginRight: '6px'}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
         </button>
       </div>
 
@@ -163,7 +164,9 @@ export default function Analytics() {
           </div>
         ) : (
           <div className="empty-state card">
-            <div className="icon">📊</div>
+            <div className="icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+            </div>
             <p>No expense data yet</p>
           </div>
         )}

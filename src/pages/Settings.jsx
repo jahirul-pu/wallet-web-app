@@ -136,7 +136,9 @@ export default function Settings() {
         {!isConfigured ? (
           <div className="settings-item card" id="cloud-sync-unconfigured">
             <div className="settings-item-left">
-              <span className="settings-icon">☁️</span>
+              <span className="settings-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+            </span>
               <div>
                 <div className="settings-item-title">Cloud Sync</div>
                 <div className="settings-item-desc">Firebase not configured. Add your config to .env to enable.</div>
@@ -193,7 +195,9 @@ export default function Settings() {
         ) : (
           <div className="settings-item card" onClick={() => setShowAuthSheet(true)} id="cloud-sign-in-btn">
             <div className="settings-item-left">
-              <span className="settings-icon">☁️</span>
+              <span className="settings-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+            </span>
               <div>
                 <div className="settings-item-title">Sign In</div>
                 <div className="settings-item-desc">Connect with Google or email to sync across devices</div>
@@ -213,7 +217,9 @@ export default function Settings() {
         {/* Export */}
         <div className="settings-item card" onClick={handleExport} id="export-btn">
           <div className="settings-item-left">
-            <span className="settings-icon">📤</span>
+            <span className="settings-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </span>
             <div>
               <div className="settings-item-title">Export Data</div>
               <div className="settings-item-desc">Download JSON backup</div>
@@ -225,7 +231,9 @@ export default function Settings() {
         {/* Import */}
         <label className="settings-item card" htmlFor="import-input" id="import-btn">
           <div className="settings-item-left">
-            <span className="settings-icon">📥</span>
+            <span className="settings-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </span>
             <div>
               <div className="settings-item-title">Import Data</div>
               <div className="settings-item-desc">Restore from backup</div>
@@ -242,7 +250,9 @@ export default function Settings() {
         {/* Stats */}
         <div className="settings-item card" id="stats-card">
           <div className="settings-item-left">
-            <span className="settings-icon">📊</span>
+            <span className="settings-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </span>
             <div>
               <div className="settings-item-title">Statistics</div>
               <div className="settings-item-desc">
@@ -255,7 +265,9 @@ export default function Settings() {
         {/* Clear data */}
         <div className="settings-item card danger" onClick={handleClearAll} id="clear-all-btn">
           <div className="settings-item-left">
-            <span className="settings-icon">🗑️</span>
+            <span className="settings-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </span>
             <div>
               <div className="settings-item-title">Clear All Data</div>
               <div className="settings-item-desc">Delete everything permanently</div>

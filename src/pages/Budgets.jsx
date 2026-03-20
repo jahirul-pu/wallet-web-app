@@ -98,10 +98,16 @@ export default function Budgets() {
                   />
                 </div>
                 {pct >= 100 && (
-                  <div className="budget-alert danger">⚠️ Budget exceeded!</div>
+                  <div className="budget-alert danger">
+                    <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Budget exceeded!
+                  </div>
                 )}
                 {pct >= 80 && pct < 100 && (
-                  <div className="budget-alert warning">⚡ Almost at limit</div>
+                  <div className="budget-alert warning">
+                    <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    Almost at limit
+                  </div>
                 )}
               </div>
             );
@@ -109,7 +115,9 @@ export default function Budgets() {
         </div>
       ) : (
         <div className="empty-state">
-          <div className="icon">📊</div>
+          <div className="icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          </div>
           <p>No budgets set for this month</p>
         </div>
       )}

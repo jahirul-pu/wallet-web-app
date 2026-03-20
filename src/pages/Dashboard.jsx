@@ -108,7 +108,8 @@ export default function Dashboard() {
       {/* Overdue debts alert */}
       {overdueDebts.length > 0 && (
         <div className="dashboard-alert" onClick={() => navigate('/debts')}>
-          ⚠️ You have {overdueDebts.length} overdue debt{overdueDebts.length > 1 ? 's' : ''}
+          <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          You have {overdueDebts.length} overdue debt{overdueDebts.length > 1 ? 's' : ''}
         </div>
       )}
 
@@ -155,7 +156,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="empty-state card">
-            <div className="icon">📊</div>
+            <div className="icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
             <p>No expenses this month yet</p>
           </div>
         )}
@@ -182,7 +185,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="empty-state card">
-            <div className="icon">💸</div>
+            <div className="icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
             <p>No transactions yet. Tap "Add" to get started!</p>
           </div>
         )}
@@ -191,15 +196,21 @@ export default function Dashboard() {
       {/* Quick actions */}
       <div className="dashboard-actions">
         <button className="quick-action card" onClick={() => navigate('/add?type=income')}>
-          <span className="quick-action-icon income">↑</span>
+          <span className="quick-action-icon income">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+          </span>
           <span>Income</span>
         </button>
         <button className="quick-action card" onClick={() => navigate('/add?type=expense')}>
-          <span className="quick-action-icon expense">↓</span>
+          <span className="quick-action-icon expense">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+          </span>
           <span>Expense</span>
         </button>
         <button className="quick-action card" onClick={() => navigate('/add?type=transfer')}>
-          <span className="quick-action-icon transfer">⇄</span>
+          <span className="quick-action-icon transfer">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 8 16 13"></polyline><line x1="21" y1="8" x2="9" y2="8"></line><polyline points="8 21 3 16 8 11"></polyline><line x1="3" y1="16" x2="15" y2="16"></line></svg>
+          </span>
           <span>Transfer</span>
         </button>
       </div>
