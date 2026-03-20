@@ -17,6 +17,9 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import './App.css';
 
+import Sidebar from './components/Sidebar';
+import TopNav from './components/TopNav';
+
 function AppContent() {
   const location = useLocation();
   const theme = useSettingsStore((s) => s.theme);
@@ -41,24 +44,28 @@ function AppContent() {
     return () => { if (unsub) unsub(); };
   }, [initAuth]);
 
-  // Hide bottom nav on /add page
+  // Hide bottom nav on /add page for mobile views
   const hideNav = location.pathname.startsWith('/add');
 
   return (
     <>
-      <main>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/add" element={<AddTransaction />} />
-          <Route path="/accounts" element={<Accounts />} />
-          <Route path="/budgets" element={<Budgets />} />
-          <Route path="/debts" element={<Debts />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </main>
-      {!hideNav && <BottomNav />}
+      <Sidebar />
+      <div className="app-main">
+        <TopNav />
+        <main className="app-content">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/add" element={<AddTransaction />} />
+            <Route path="/accounts" element={<Accounts />} />
+            <Route path="/budgets" element={<Budgets />} />
+            <Route path="/debts" element={<Debts />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
+        {!hideNav && <BottomNav />}
+      </div>
     </>
   );
 }

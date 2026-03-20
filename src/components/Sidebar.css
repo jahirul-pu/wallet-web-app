@@ -1,0 +1,84 @@
+.sidebar-brand {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: var(--space-8) var(--space-6);
+  color: var(--color-text-primary);
+  /* On Deep Slate background, text will be forced to light via App.css grouping, but we can explicitly set it here */
+  color: #F7F9FB;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  flex: 1;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 14px var(--space-4);
+  border-radius: var(--radius-md);
+  color: #94a3b8; /* Slate Gray */
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #F7F9FB;
+}
+
+.sidebar-link.active {
+  background: rgba(111, 251, 190, 0.1);
+  color: #6FFBBE; /* Emerald Neon */
+  border-left-color: #6FFBBE;
+}
+
+.sidebar-link-icon {
+  display: inline-flex;
+}
+
+.sidebar-footer {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar-footer-link {
+  color: #64748b;
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.sidebar-footer-link:hover {
+  color: #94a3b8;
+}
+
+.sidebar-logout {
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: #F7F9FB;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-logout:hover {
+  background: rgba(255,255,255,0.05);
+}

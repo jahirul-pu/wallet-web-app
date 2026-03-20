@@ -1,1 +1,67 @@
-/* App-level styles - minimal since index.css handles the design system */
+/* App grid layout */
+@media (min-width: 1024px) {
+  #root {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .app-sidebar {
+    display: flex;
+    width: 260px;
+    flex-shrink: 0;
+    flex-direction: column;
+    background: #0F172A; /* Deep Slate Sidebar strictly per prompt */
+    border-right: 1px solid rgba(255,255,255,0.05); /* very subtle on dark */
+    color: #F7F9FB; /* Text forced to light for contrast */
+  }
+
+  .app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .app-topnav {
+    height: 76px;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-6);
+    justify-content: space-between;
+    background: var(--color-bg-primary); /* Syncs with dashboard background */
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .app-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-6);
+    padding-bottom: 80px;
+  }
+
+  .bottom-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .app-sidebar,
+  .app-topnav {
+    display: none !important;
+  }
+
+  .app-main {
+    flex: 1;
+    width: 100%;
+    /* height: 100vh; is handled globally but let's confirm */
+  }
+  
+  .app-content {
+    padding-bottom: var(--bottom-nav-height);
+  }
+}
