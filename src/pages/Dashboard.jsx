@@ -141,6 +141,179 @@ export default function Dashboard() {
     return { categoryBreakdown, dailyAvg, savingsRate, last7, maxDay, totalExpenseAmt };
   }, [transactions, income, expense]);
 
+  // Previous month data for % change comparison
+  const prevMonth = useMemo(() => {
+    const now = new Date();
+    const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const pmKey = `${pm.getFullYear()}-${String(pm.getMonth() + 1).padStart(2, '0')}`;
+    const pmTxns = transactions.filter((t) => {
+      const d = new Date(t.date);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === pmKey;
+    });
+    const pmInc = pmTxns.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const pmExp = pmTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const pmNet = pmInc - pmExp;
+    return { income: pmInc, expense: pmExp, net: pmNet };
+  }, [transactions]);
+
+  // 7-day sparkline data generators
+  const spark7 = (filterFn) => {
+    const pts = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split('T')[0];
+      pts.push(transactions.filter((t) => t.date === ds && filterFn(t)).reduce((s, t) => s + t.amount, 0));
+    }
+    return pts;
+  };
+
+  const balanceSpark = useMemo(() => {
+    const pts = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split('T')[0];
+      const running = transactions
+        .filter((t) => t.date <= ds)
+        .reduce((s, t) => {
+          if (t.type === 'income') return s + t.amount;
+          if (t.type === 'expense') return s - t.amount;
+          return s;
+        }, 0);
+      pts.push(running);
+    }
+    return pts;
+  }, [transactions]);
+
+  const incomeSpark = useMemo(() => spark7((t) => t.type === 'income'), [transactions]);
+  const expenseSpark = useMemo(() => spark7((t) => t.type === 'expense'), [transactions]);
+
+  const pctChange = (curr, prev) => {
+    if (prev === 0) return curr > 0 ? 100 : 0;
+    return Math.round(((curr - prev) / prev) * 100);
+  };
+
+  // ── Smart Insights Engine ──
+  const insights = useMemo(() => {
+    const items = [];
+    const sym = currency?.symbol || '৳';
+
+    // 1. Category spending change vs last month
+    const now = new Date();
+    const cy = now.getFullYear(), cm = now.getMonth();
+    const py = cm === 0 ? cy - 1 : cy, pmo = cm === 0 ? 11 : cm - 1;
+
+    const catSpend = (year, month) => {
+      const map = {};
+      transactions.forEach((t) => {
+        if (t.type !== 'expense') return;
+        const d = new Date(t.date);
+        if (d.getFullYear() !== year || d.getMonth() !== month) return;
+        const cat = t.category || 'other_expense';
+        map[cat] = (map[cat] || 0) + t.amount;
+      });
+      return map;
+    };
+
+    const currCats = catSpend(cy, cm);
+    const prevCats = catSpend(py, pmo);
+
+    // Find biggest category increase
+    let biggestIncrease = null;
+    Object.entries(currCats).forEach(([cat, amt]) => {
+      const prev = prevCats[cat] || 0;
+      if (prev > 0) {
+        const pct = Math.round(((amt - prev) / prev) * 100);
+        if (pct > 10 && (!biggestIncrease || pct > biggestIncrease.pct)) {
+          const info = getCategoryInfo(cat);
+          biggestIncrease = { name: info.name, pct, amt };
+        }
+      }
+    });
+    if (biggestIncrease) {
+      items.push({
+        type: 'warning',
+        icon: '📊',
+        text: `You're spending ${biggestIncrease.pct}% more on ${biggestIncrease.name} this month`,
+      });
+    }
+
+    // 2. Savings rate change
+    const currSavings = income > 0 ? Math.round(((income - expense) / income) * 100) : 0;
+    const prevSavings = prevMonth.income > 0 ? Math.round(((prevMonth.income - prevMonth.expense) / prevMonth.income) * 100) : 0;
+    const savingsDiff = currSavings - prevSavings;
+    if (Math.abs(savingsDiff) >= 3 && prevMonth.income > 0) {
+      items.push({
+        type: savingsDiff > 0 ? 'positive' : 'warning',
+        icon: savingsDiff > 0 ? '🎯' : '⚠️',
+        text: savingsDiff > 0
+          ? `Your savings rate improved by ${savingsDiff}% — keep it up!`
+          : `Your savings rate dropped by ${Math.abs(savingsDiff)}% — watch your spending`,
+      });
+    }
+
+    // 3. Biggest expense category awareness
+    const topCat = Object.entries(currCats).sort((a, b) => b[1] - a[1])[0];
+    if (topCat && expense > 0) {
+      const info = getCategoryInfo(topCat[0]);
+      const pct = Math.round((topCat[1] / expense) * 100);
+      if (pct >= 30) {
+        items.push({
+          type: 'info',
+          icon: '💡',
+          text: `${info.name} is ${pct}% of your spending — your biggest category`,
+        });
+      }
+    }
+
+    // 4. Income growth
+    if (prevMonth.income > 0 && income > prevMonth.income) {
+      const incGrowth = Math.round(((income - prevMonth.income) / prevMonth.income) * 100);
+      if (incGrowth >= 5) {
+        items.push({
+          type: 'positive',
+          icon: '🚀',
+          text: `Income is up ${incGrowth}% compared to last month`,
+        });
+      }
+    }
+
+    // 5. Spending velocity warning
+    const dayOfMonth = now.getDate();
+    const daysInMonth = new Date(cy, cm + 1, 0).getDate();
+    const projectedExpense = dayOfMonth > 0 ? (expense / dayOfMonth) * daysInMonth : 0;
+    if (prevMonth.expense > 0 && projectedExpense > prevMonth.expense * 1.2 && dayOfMonth >= 7) {
+      items.push({
+        type: 'warning',
+        icon: '🔥',
+        text: `At this pace, you'll spend ${sym}${Math.round(projectedExpense).toLocaleString()} — ${Math.round(((projectedExpense / prevMonth.expense) - 1) * 100)}% more than last month`,
+      });
+    }
+
+    // 6. No-spend streak
+    let streak = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i - 1);
+      const ds = d.toISOString().split('T')[0];
+      const hadExpense = transactions.some((t) => t.type === 'expense' && t.date === ds);
+      if (!hadExpense) streak++;
+      else break;
+    }
+    if (streak >= 2) {
+      items.push({
+        type: 'positive',
+        icon: '✨',
+        text: `${streak}-day no-spend streak — impressive discipline!`,
+      });
+    }
+
+    return items.slice(0, 4); // Max 4 insights
+  }, [transactions, income, expense, prevMonth, currency]);
+
   return (
     <div className="page" id="dashboard-page">
       <div className="dashboard-grid">
@@ -157,6 +330,44 @@ export default function Dashboard() {
             + Add
           </button>
         </div>
+
+        {/* Row 1 — Financial Overview */}
+        <div className="fin-overview-row">
+          <OverviewCard
+            label="Total Balance"
+            amount={formatAmount(balance, currency)}
+            change={pctChange(balance, balance - (income - expense) + (prevMonth.income - prevMonth.expense))}
+            sparkData={balanceSpark}
+            color="#6FFBBE"
+          />
+          <OverviewCard
+            label="Monthly Income"
+            amount={formatAmount(income, currency)}
+            change={pctChange(income, prevMonth.income)}
+            sparkData={incomeSpark}
+            color="#34d399"
+          />
+          <OverviewCard
+            label="Monthly Expense"
+            amount={formatAmount(expense, currency)}
+            change={pctChange(expense, prevMonth.expense)}
+            sparkData={expenseSpark}
+            color="#fb7185"
+            invertChange
+          />
+        </div>
+
+        {/* Row 2 — Smart Insights */}
+        {insights.length > 0 && (
+          <div className="smart-insights-row">
+            {insights.map((insight, i) => (
+              <div key={i} className={`smart-insight-chip ${insight.type}`}>
+                <span className="smart-insight-icon">{insight.icon}</span>
+                <span className="smart-insight-text">{insight.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Left Column - Main Vault Activity */}
         <div className="dashboard-col-main">
@@ -411,4 +622,68 @@ function getGreeting() {
   if (h < 12) return 'Morning';
   if (h < 17) return 'Afternoon';
   return 'Evening';
+}
+
+/* ── Mini Sparkline (SVG) ── */
+function MiniSparkline({ data, color = '#6FFBBE', width = 80, height = 32 }) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pad = 2;
+  const points = data
+    .map((v, i) => {
+      const x = pad + (i / (data.length - 1)) * (width - pad * 2);
+      const y = height - pad - ((v - min) / range) * (height - pad * 2);
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none" style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id={`sg-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Fill area */}
+      <polygon
+        points={`${pad},${height} ${points} ${width - pad},${height}`}
+        fill={`url(#sg-${color.replace('#', '')})`}
+      />
+      {/* Line */}
+      <polyline
+        points={points}
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/* ── Overview Stat Card ── */
+function OverviewCard({ label, amount, change, sparkData, color, invertChange }) {
+  const isPositive = invertChange ? change <= 0 : change >= 0;
+  const arrow = change >= 0 ? '↑' : '↓';
+  const absChange = Math.abs(change);
+
+  return (
+    <div className="fin-overview-card card">
+      <div className="fin-overview-top">
+        <span className="fin-overview-label">{label}</span>
+        {change !== 0 && (
+          <span className={`fin-overview-change ${isPositive ? 'positive' : 'negative'}`}>
+            {arrow} {absChange}%
+          </span>
+        )}
+      </div>
+      <div className="fin-overview-amount">{amount}</div>
+      <div className="fin-overview-spark">
+        <MiniSparkline data={sparkData} color={color} width={100} height={28} />
+      </div>
+    </div>
+  );
 }
