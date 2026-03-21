@@ -1,14 +1,18 @@
 // Date formatting utilities — portable, no DOM
 
 export const formatDate = (dateStr) => {
-  const d = new Date(dateStr);
+  // Parse as local date to avoid UTC offset issues
+  const parts = dateStr.split('-');
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
   const now = new Date();
-  const diffMs = now - d;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffMs = today - d;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 0) return `in ${Math.abs(diffDays)}d`;
+  if (diffDays < 7) return `${diffDays}d ago`;
 
   return d.toLocaleDateString('en-US', {
     month: 'short',

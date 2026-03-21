@@ -38,7 +38,17 @@ export default function Transactions() {
   }, [location.search]);
 
   const filtered = useMemo(() => {
-    let list = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 1. Calculate running balances chronologically first
+    const chronological = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let runningBal = 0;
+    const annotated = chronological.map(t => {
+      if (t.type === 'income') runningBal += t.amount;
+      else if (t.type === 'expense') runningBal -= t.amount;
+      return { ...t, _runningBalance: runningBal };
+    });
+
+    // 2. Sort newest to oldest for display
+    let list = annotated.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     if (filterType !== 'all') {
       list = list.filter((t) => t.type === filterType);

@@ -25,7 +25,9 @@ export default function AddTransaction() {
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(toInputDate());
   const [party, setParty] = useState('');
-  const [salaryMonth, setSalaryMonth] = useState('');
+  const now = new Date();
+  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [salaryMonth, setSalaryMonth] = useState(defaultMonth);
   const [note, setNote] = useState('');
 
   const filteredAccounts = useMemo(() => {
@@ -169,12 +171,18 @@ export default function AddTransaction() {
         {(category === 'salary' || category === 'salary_expense') && (
           <div className="input-group">
             <label>Salary Month</label>
-            <input
-              type="month"
+            <select
               className="input"
               value={salaryMonth}
               onChange={(e) => setSalaryMonth(e.target.value)}
-            />
+            >
+              {Array.from({ length: 14 }, (_, i) => {
+                const d = new Date(now.getFullYear(), now.getMonth() - 12 + i, 1);
+                const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                return <option key={val} value={val}>{label}</option>;
+              })}
+            </select>
           </div>
         )}
 
