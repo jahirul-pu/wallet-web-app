@@ -301,6 +301,28 @@ img {
   transform: translateY(0);
 }
 
+.btn-income {
+  background: #34d399; /* emerald 400 - more muted/soft */
+  color: #FFFFFF !important;
+}
+
+.btn-income:hover {
+  background: #10b981;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(52, 211, 153, 0.25);
+}
+
+.btn-expense {
+  background: #fb7185; /* rose 400 - more muted/soft */
+  color: #FFFFFF !important;
+}
+
+.btn-expense:hover {
+  background: #f43f5e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(251, 113, 133, 0.25);
+}
+
 .btn-secondary {
   background: var(--color-bg-input);
   color: var(--color-text-primary);

@@ -304,7 +304,7 @@ export default function Debts() {
             </div>
           )}
 
-          <button className="btn btn-primary submit-btn" onClick={handleAddDebt}>Add</button>
+          <button className={`btn submit-btn ${newType === 'owed_to_me' ? 'btn-income' : 'btn-expense'}`} onClick={handleAddDebt}>Add</button>
         </div>
       </BottomSheet>
 
@@ -317,7 +317,7 @@ export default function Debts() {
           <div className="input-group"><label>Payment Amount</label><CalculatorInput value={payAmount} onChange={setPayAmount} /></div>
           <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Date</label><DatePicker value={payDate} onChange={setPayDate} /></div>
           <div className="input-group"><label>Note (optional)</label><input className="input" placeholder="Payment note..." value={payNote} onChange={(e) => setPayNote(e.target.value)} /></div>
-          <button className="btn btn-primary submit-btn" onClick={handlePay}>{selectedPaymentId ? 'Update Payment' : 'Record Payment'}</button>
+          <button className={`btn submit-btn ${selectedDebt?.type === 'owed_to_me' ? 'btn-income' : 'btn-expense'}`} onClick={handlePay}>{selectedPaymentId ? 'Update Payment' : 'Record Payment'}</button>
         </div>
       </BottomSheet>
     </div>

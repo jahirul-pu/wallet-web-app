@@ -144,7 +144,7 @@ export default function AddTransaction() {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary submit-btn" id="submit-btn">
+        <button type="submit" className={`btn submit-btn ${type === 'income' ? 'btn-income' : type === 'expense' ? 'btn-expense' : 'btn-secondary'}`} id="submit-btn">
           {type === 'transfer' ? 'Transfer' : 'Save Transaction'}
         </button>
       </form>

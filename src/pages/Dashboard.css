@@ -132,15 +132,15 @@
 }
 
 .qa-type-btn.active.expense {
-  background: var(--color-expense-light);
-  color: var(--color-expense);
-  border-color: var(--color-expense);
+  background: #fff1f2; /* soft rose */
+  color: #e11d48;
+  border-color: #e11d48;
 }
 
 .qa-type-btn.active.income {
-  background: var(--color-income-light);
-  color: var(--color-income);
-  border-color: var(--color-income);
+  background: #ecfdf5; /* soft emerald */
+  color: #059669;
+  border-color: #059669;
 }
 
 .qa-input-row {

@@ -160,7 +160,7 @@ export default function Dashboard() {
                     <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
                 </select>
-                <button type="submit" className="qa-submit-btn">
+                <button type="submit" className={`qa-submit-btn ${qaType === 'income' ? 'btn-income' : 'btn-expense'}`}>
                   {qaSuccess ? '✓ Added' : '+ Add'}
                 </button>
               </div>

@@ -25,13 +25,13 @@
 }
 
 .type-btn.active.income {
-  background: var(--color-income-light);
-  color: var(--color-income);
+  background: #ecfdf5; /* emerald 50 - very soft */
+  color: #059669; /* emerald 600 - muted but clear green */
 }
 
 .type-btn.active.expense {
-  background: var(--color-expense-light);
-  color: var(--color-expense);
+  background: #fff1f2; /* rose 50 - very soft */
+  color: #e11d48; /* rose 600 - muted red */
 }
 
 .type-btn.active.transfer {
