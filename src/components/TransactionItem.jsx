@@ -11,6 +11,14 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
 
   const isPending = new Date(transaction.date) > new Date();
 
+  // Helper to neatly format "YYYY-MM" into "Mar 2026"
+  const formatSalaryMonth = (sm) => {
+    if (!sm) return '';
+    const [y, m] = sm.split('-');
+    const date = new Date(y, m - 1);
+    return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+  };
+
   return (
     <div
       className="transaction-item"
@@ -24,7 +32,12 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
         {cat.icon}
       </div>
       <div className="transaction-item-main">
-        <div className="transaction-item-name">{transaction.note || cat.name}</div>
+        <div className="transaction-item-name">
+          {transaction.party
+            ? `${transaction.party}${transaction.note ? ` — ${transaction.note}` : ''}`
+            : (transaction.note || cat.name)}
+          {transaction.salaryMonth && ` (for ${formatSalaryMonth(transaction.salaryMonth)})`}
+        </div>
         <div className="transaction-item-category">{cat.name}</div>
         <div className="transaction-item-meta mobile-only">
           <span className="transaction-item-date">{formatDate(transaction.date)}</span>

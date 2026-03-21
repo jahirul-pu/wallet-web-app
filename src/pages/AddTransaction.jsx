@@ -24,6 +24,8 @@ export default function AddTransaction() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(toInputDate());
+  const [party, setParty] = useState('');
+  const [salaryMonth, setSalaryMonth] = useState('');
   const [note, setNote] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   const [toAccountId, setToAccountId] = useState(accounts[1]?.id || '');
@@ -46,7 +48,12 @@ export default function AddTransaction() {
       });
     } else {
       if (!category) return;
-      addTransaction({ type, amount: Number(amount), category, date, note, accountId });
+      
+      const payload = { type, amount: Number(amount), category, date, party, note, accountId };
+      if (category === 'salary' || category === 'salary_expense') {
+        payload.salaryMonth = salaryMonth;
+      }
+      addTransaction(payload);
       adjustBalance(accountId, Number(amount), type);
     }
 
@@ -130,6 +137,33 @@ export default function AddTransaction() {
             id="date-input"
           />
         </div>
+
+        {/* Paid To / Paid By */}
+        {type !== 'transfer' && (
+          <div className="input-group">
+            <label>{type === 'expense' ? 'Paid to' : 'Paid by'}</label>
+            <input
+              type="text"
+              className="input"
+              placeholder={type === 'expense' ? 'e.g. Starbucks, Landlord' : 'e.g. Employer, Client'}
+              value={party}
+              onChange={(e) => setParty(e.target.value)}
+            />
+          </div>
+        )}
+
+        {/* Salary Month */}
+        {(category === 'salary' || category === 'salary_expense') && (
+          <div className="input-group">
+            <label>Salary Month</label>
+            <input
+              type="month"
+              className="input"
+              value={salaryMonth}
+              onChange={(e) => setSalaryMonth(e.target.value)}
+            />
+          </div>
+        )}
 
         {/* Note */}
         <div className="input-group">
