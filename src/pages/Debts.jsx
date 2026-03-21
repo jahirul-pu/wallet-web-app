@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useDebtStore } from '../stores/useDebtStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { formatAmount } from '../utils/currencies';
-import { formatDate, isOverdue, daysUntil } from '../utils/dateFormat';
+import { formatDate, isOverdue, daysUntil, toInputDate } from '../utils/dateFormat';
 import BottomSheet from '../components/BottomSheet';
 import DatePicker from '../components/DatePicker';
 import CalculatorInput from '../components/CalculatorInput';
@@ -14,6 +14,8 @@ export default function Debts() {
   const addPayment = useDebtStore((s) => s.addPayment);
   const markAsPaid = useDebtStore((s) => s.markAsPaid);
   const deleteDebt = useDebtStore((s) => s.deleteDebt);
+  const deletePayment = useDebtStore((s) => s.deletePayment);
+  const editPayment = useDebtStore((s) => s.editPayment);
   const currency = useSettingsStore((s) => s.currency);
 
   const { totalOwedToMe, totalIOwe } = useMemo(() => ({
@@ -25,8 +27,10 @@ export default function Debts() {
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showPaySheet, setShowPaySheet] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState(null);
+  const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [payAmount, setPayAmount] = useState('');
   const [payNote, setPayNote] = useState('');
+  const [payDate, setPayDate] = useState('');
 
   // New debt form
   const [newPerson, setNewPerson] = useState('');
@@ -52,15 +56,30 @@ export default function Debts() {
 
   const handlePay = () => {
     if (!payAmount || !selectedDebt) return;
-    addPayment(selectedDebt.id, Number(payAmount), payNote);
-    setPayAmount(''); setPayNote('');
+    if (selectedPaymentId) {
+      editPayment(selectedDebt.id, selectedPaymentId, Number(payAmount), payNote, payDate);
+    } else {
+      addPayment(selectedDebt.id, Number(payAmount), payNote, payDate);
+    }
+    setPayAmount(''); setPayNote(''); setPayDate(''); setSelectedPaymentId(null);
     setShowPaySheet(false);
   };
 
   const openPaySheet = (debt) => {
     setSelectedDebt(debt);
+    setSelectedPaymentId(null);
     setPayAmount('');
     setPayNote('');
+    setPayDate(toInputDate());
+    setShowPaySheet(true);
+  };
+
+  const openEditPaySheet = (debt, p) => {
+    setSelectedDebt(debt);
+    setSelectedPaymentId(p.id);
+    setPayAmount(p.amount.toString());
+    setPayNote(p.note || '');
+    setPayDate(toInputDate(p.date));
     setShowPaySheet(true);
   };
 
@@ -136,11 +155,36 @@ export default function Debts() {
                     </span>
                   )}
                   {d.payments.length > 0 && (
-                    <span>{d.payments.length} payment{d.payments.length > 1 ? 's' : ''} made</span>
+                    <span>{d.payments.length} payment{d.payments.length > 1 ? 's' : ''}</span>
                   )}
                 </div>
 
-                {d.status === 'active' && (
+                {d.payments.length > 0 && (
+                  <div className="debt-payments-breakdown" style={{ marginTop: 'var(--space-3)', background: 'var(--color-bg-input)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '8px', letterSpacing: '1px' }}>Payment History</div>
+                    {d.payments.map((p, index) => (
+                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: index === d.payments.length - 1 ? 0 : '8px', fontSize: 'var(--text-sm)', borderBottom: index === d.payments.length - 1 ? 'none' : '1px solid var(--color-border)', paddingBottom: index === d.payments.length - 1 ? 0 : '8px' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: 'var(--color-text-primary)' }}>{formatDate(p.date)}</div>
+                          {p.note && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>{p.note}</div>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ fontWeight: '500' }}>{formatAmount(p.amount, currency)}</div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button style={{ background: 'none', border: 'none', color: 'var(--color-primary)', padding: '4px', cursor: 'pointer', display: 'flex' }} onClick={() => openEditPaySheet(d, p)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </button>
+                            <button style={{ background: 'none', border: 'none', color: 'var(--color-danger)', padding: '4px', cursor: 'pointer', display: 'flex' }} onClick={() => { if(window.confirm('Delete this payment record?')) deletePayment(d.id, p.id); }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {d.status === 'active' ? (
                   <div className="debt-card-actions">
                     <button className="btn btn-primary btn-sm" onClick={() => openPaySheet(d)}>
                       + Payment
@@ -148,8 +192,14 @@ export default function Debts() {
                     <button className="btn btn-secondary btn-sm" onClick={() => markAsPaid(d.id)}>
                        Settle
                     </button>
-                    <button className="btn btn-danger btn-sm" onClick={() => deleteDebt(d.id)}>
+                    <button className="btn btn-danger btn-sm" onClick={() => { if(window.confirm('Delete this active debt?')) deleteDebt(d.id); }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="debt-card-actions" style={{ marginTop: '16px' }}>
+                    <button className="btn btn-danger btn-sm" onClick={() => { if(window.confirm('Delete this settled debt record?')) deleteDebt(d.id); }}>
+                      Delete Settled Record
                     </button>
                   </div>
                 )}
@@ -186,14 +236,15 @@ export default function Debts() {
       </BottomSheet>
 
       {/* Payment Sheet */}
-      <BottomSheet isOpen={showPaySheet} onClose={() => setShowPaySheet(false)} title={`Pay ${selectedDebt?.personName || ''}`}>
+      <BottomSheet isOpen={showPaySheet} onClose={() => { setShowPaySheet(false); setSelectedPaymentId(null); }} title={selectedPaymentId ? `Edit Payment for ${selectedDebt?.personName}` : `Pay ${selectedDebt?.personName || ''}`}>
         <div className="sheet-form">
           <div style={{ textAlign: 'center', marginBottom: 'var(--space-2)' }}>
-            <div className="debt-card-total">Remaining: {formatAmount((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0), currency)}</div>
+            <div className="debt-card-total">Remaining: {formatAmount((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0) + (selectedPaymentId ? selectedDebt?.payments.find(p => p.id === selectedPaymentId)?.amount || 0 : 0), currency)}</div>
           </div>
           <div className="input-group"><label>Payment Amount</label><CalculatorInput value={payAmount} onChange={setPayAmount} /></div>
+          <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Date</label><DatePicker value={payDate} onChange={setPayDate} /></div>
           <div className="input-group"><label>Note (optional)</label><input className="input" placeholder="Payment note..." value={payNote} onChange={(e) => setPayNote(e.target.value)} /></div>
-          <button className="btn btn-primary submit-btn" onClick={handlePay}>Record Payment</button>
+          <button className="btn btn-primary submit-btn" onClick={handlePay}>{selectedPaymentId ? 'Update Payment' : 'Record Payment'}</button>
         </div>
       </BottomSheet>
     </div>

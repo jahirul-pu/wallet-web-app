@@ -69,7 +69,7 @@ export default function Signup() {
             </svg>
           </div>
           <h1>Enter the Vault</h1>
-          <p>Create your secure Lumina Finance account</p>
+          <p>Create your secure Purrfect Finance account</p>
         </div>
 
         {/* ── Form Body ── */}

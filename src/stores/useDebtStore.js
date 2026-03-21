@@ -29,7 +29,7 @@ export const useDebtStore = create(
         return debt;
       },
 
-      addPayment: (debtId, amount, note = '') => {
+      addPayment: (debtId, amount, note = '', dateStr = null) => {
         const amt = Number(amount);
         set((state) => ({
           debts: state.debts.map((d) => {
@@ -39,12 +39,54 @@ export const useDebtStore = create(
               id: generateId(),
               amount: amt,
               note,
-              date: new Date().toISOString(),
+              date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
             };
             return {
               ...d,
               paidAmount: newPaid,
               payments: [...d.payments, payment],
+              status: newPaid >= d.totalAmount ? 'paid' : 'active',
+            };
+          }),
+        }));
+      },
+
+      deletePayment: (debtId, paymentId) => {
+        set((state) => ({
+          debts: state.debts.map((d) => {
+            if (d.id !== debtId) return d;
+            const paymentToDelete = d.payments.find(p => p.id === paymentId);
+            if (!paymentToDelete) return d;
+            const newPaid = d.paidAmount - paymentToDelete.amount;
+            return {
+              ...d,
+              paidAmount: newPaid,
+              payments: d.payments.filter(p => p.id !== paymentId),
+              status: newPaid >= d.totalAmount ? 'paid' : 'active',
+            };
+          }),
+        }));
+      },
+
+      editPayment: (debtId, paymentId, amount, note = '', dateStr = null) => {
+        const amt = Number(amount);
+        set((state) => ({
+          debts: state.debts.map((d) => {
+            if (d.id !== debtId) return d;
+            const oldPayment = d.payments.find(p => p.id === paymentId);
+            if (!oldPayment) return d;
+            
+            const newPaid = d.paidAmount - oldPayment.amount + amt;
+            const updatedPayments = d.payments.map((p) => 
+               p.id === paymentId 
+                 ? { ...p, amount: amt, note, date: dateStr ? new Date(dateStr).toISOString() : p.date } 
+                 : p
+            );
+
+            return {
+              ...d,
+              paidAmount: newPaid,
+              payments: updatedPayments,
               status: newPaid >= d.totalAmount ? 'paid' : 'active',
             };
           }),

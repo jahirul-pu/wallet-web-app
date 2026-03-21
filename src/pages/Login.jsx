@@ -49,7 +49,7 @@ export default function Login() {
             </svg>
           </div>
           <h1>Access Your Vault</h1>
-          <p>Authenticate to continue to Lumina Finance</p>
+          <p>Authenticate to continue to Purrfect Finance</p>
         </div>
 
         {/* ── Card Body — Form ── */}

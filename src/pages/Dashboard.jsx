@@ -241,7 +241,7 @@ function MyCardsWidget() {
     <div className="dashboard-section ui-widget">
       <h2 className="dashboard-section-title">My Cards</h2>
       <div className="credit-card-viz card">
-        <div className="card-viz-logo">LUMINA</div>
+        <div className="card-viz-logo">PURRFECT</div>
         <div className="card-viz-chip">
           <div className="chip-inner"></div>
         </div>
