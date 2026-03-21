@@ -29,6 +29,7 @@ export default function Accounts() {
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('💵');
   const [newColor, setNewColor] = useState('#10b981');
+  const [newType, setNewType] = useState('all');
   
   const [fromAcc, setFromAcc] = useState('');
   const [toAcc, setToAcc] = useState('');
@@ -39,6 +40,7 @@ export default function Accounts() {
     setNewName('');
     setNewIcon('💵');
     setNewColor('#10b981');
+    setNewType('all');
     setShowAddSheet(true);
   };
 
@@ -47,15 +49,16 @@ export default function Accounts() {
     setNewName(acc.name);
     setNewIcon(acc.icon);
     setNewColor(acc.color || '#10b981');
+    setNewType(acc.type || 'all');
     setShowAddSheet(true);
   };
 
   const handleSaveAccount = () => {
     if (!newName.trim()) return;
     if (editingId) {
-      updateAccount(editingId, { name: newName, icon: newIcon, color: newColor });
+      updateAccount(editingId, { name: newName, icon: newIcon, color: newColor, type: newType });
     } else {
-      addAccount({ name: newName, icon: newIcon, color: newColor });
+      addAccount({ name: newName, icon: newIcon, color: newColor, type: newType });
     }
     setNewName('');
     setEditingId(null);
@@ -93,7 +96,14 @@ export default function Accounts() {
                 {renderAccountIcon(acc.icon)}
               </div>
               <div>
-                <div className="account-card-name">{acc.name}</div>
+                <div className="account-card-name">
+                  {acc.name}
+                  {acc.type && acc.type !== 'all' && (
+                    <span style={{ fontSize: '0.65rem', marginLeft: '6px', padding: '2px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', textTransform: 'uppercase', verticalAlign: 'middle', opacity: 0.8 }}>
+                      {acc.type}
+                    </span>
+                  )}
+                </div>
                 <div
                   className="account-card-balance"
                   style={{ color: acc.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
@@ -161,6 +171,14 @@ export default function Accounts() {
           <div className="input-group">
             <label>Name</label>
             <input className="input" placeholder="e.g. Savings" value={newName} onChange={(e) => setNewName(e.target.value)} />
+          </div>
+          <div className="input-group">
+            <label>Wallet Tag</label>
+            <select className="input" style={{ appearance: 'auto' }} value={newType} onChange={(e) => setNewType(e.target.value)}>
+              <option value="all">Both Income & Expense</option>
+              <option value="income">Income Only</option>
+              <option value="expense">Expense Only</option>
+            </select>
           </div>
           <div className="input-group">
             <label>Icon</label>

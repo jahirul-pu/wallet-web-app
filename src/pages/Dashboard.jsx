@@ -28,8 +28,20 @@ export default function Dashboard() {
   const [qaAmount, setQaAmount] = useState('');
   const [qaType, setQaType] = useState('expense');
   const [qaNote, setQaNote] = useState('');
-  const [qaAccountId, setQaAccountId] = useState(accounts[0]?.id || '');
+  const [qaAccountId, setQaAccountId] = useState('');
   const [qaSuccess, setQaSuccess] = useState(false);
+
+  const filteredQaAccounts = useMemo(() => {
+    return accounts.filter((a) => !a.type || a.type === 'all' || a.type === qaType);
+  }, [accounts, qaType]);
+
+  useMemo(() => {
+    if (qaAccountId && !filteredQaAccounts.find(a => a.id === qaAccountId)) {
+      setQaAccountId(filteredQaAccounts[0]?.id || '');
+    } else if (!qaAccountId && filteredQaAccounts.length > 0) {
+      setQaAccountId(filteredQaAccounts[0].id);
+    }
+  }, [filteredQaAccounts, qaAccountId]);
 
   const handleQuickAdd = (e) => {
     e.preventDefault();
@@ -197,7 +209,7 @@ export default function Dashboard() {
                   value={qaAccountId}
                   onChange={(e) => setQaAccountId(e.target.value)}
                 >
-                  {accounts.map((a) => (
+                  {filteredQaAccounts.map((a) => (
                     <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
                 </select>

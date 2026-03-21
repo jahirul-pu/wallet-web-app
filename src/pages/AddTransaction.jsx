@@ -27,8 +27,21 @@ export default function AddTransaction() {
   const [party, setParty] = useState('');
   const [salaryMonth, setSalaryMonth] = useState('');
   const [note, setNote] = useState('');
-  const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+
+  const filteredAccounts = useMemo(() => {
+    if (type === 'transfer') return accounts;
+    return accounts.filter((a) => !a.type || a.type === 'all' || a.type === type);
+  }, [accounts, type]);
+
+  const [accountId, setAccountId] = useState(filteredAccounts[0]?.id || '');
   const [toAccountId, setToAccountId] = useState(accounts[1]?.id || '');
+
+  // Keep selected account valid when switching types
+  useMemo(() => {
+    if (accountId && !filteredAccounts.find(a => a.id === accountId)) {
+      setAccountId(filteredAccounts[0]?.id || '');
+    }
+  }, [filteredAccounts, accountId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -102,7 +115,7 @@ export default function AddTransaction() {
         <div className="input-group" style={{ position: 'relative', zIndex: 10 }}>
           <label>{type === 'transfer' ? 'From Account' : 'Account'}</label>
           <AccountDropdown 
-            accounts={accounts} 
+            accounts={filteredAccounts} 
             value={accountId} 
             onChange={setAccountId} 
           />
