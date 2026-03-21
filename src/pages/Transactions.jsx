@@ -1,11 +1,30 @@
 import { useState, useMemo } from 'react';
 import { useTransactionStore } from '../stores/useTransactionStore';
+import { useAccountStore } from '../stores/useAccountStore';
 import TransactionItem from '../components/TransactionItem';
 import './Transactions.css';
 
 export default function Transactions() {
   const transactions = useTransactionStore((s) => s.transactions);
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction);
+  const adjustBalance = useAccountStore((s) => s.adjustBalance);
+  const transfer = useAccountStore((s) => s.transfer);
+
+  const handleDelete = (id) => {
+    const txn = transactions.find(t => t.id === id);
+    if (!txn) return;
+
+    if (txn.type === 'transfer') {
+      // Revert transfer: move money back from "to" to "from"
+      transfer(txn.toAccountId, txn.accountId, txn.amount);
+    } else {
+      // Revert income/expense: just flip the type
+      const reverseType = txn.type === 'income' ? 'expense' : 'income';
+      adjustBalance(txn.accountId, txn.amount, reverseType);
+    }
+
+    deleteTransaction(id);
+  };
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -81,7 +100,7 @@ export default function Transactions() {
                 <TransactionItem
                   key={txn.id}
                   transaction={txn}
-                  onDelete={deleteTransaction}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>

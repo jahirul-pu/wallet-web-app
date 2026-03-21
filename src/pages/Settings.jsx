@@ -24,6 +24,7 @@ export default function Settings() {
   const accounts = useAccountStore((s) => s.accounts);
   const budgets = useBudgetStore((s) => s.budgets);
   const debts = useDebtStore((s) => s.debts);
+  const recalculateBalances = useAccountStore((s) => s.recalculateBalances);
 
   const clearTxns = useTransactionStore((s) => s.clearAll);
   const clearAccounts = useAccountStore((s) => s.clearAll);
@@ -52,6 +53,7 @@ export default function Settings() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authMode, setAuthMode] = useState('signin'); // 'signin' | 'signup'
+  const [repairStatus, setRepairStatus] = useState('');
 
   const filteredCurrencies = searchCurrencies(currSearch);
   const currentCurrency = getCurrency(currency);
@@ -93,6 +95,12 @@ export default function Settings() {
 
   const handleSyncPush = () => {
     pushAll({ transactions, accounts, budgets, debts, settings: { theme, currency } });
+  };
+
+  const handleRepair = () => {
+    recalculateBalances(transactions);
+    setRepairStatus('✅ Wallet balances repaired!');
+    setTimeout(() => setRepairStatus(''), 3000);
   };
 
   return (
@@ -243,6 +251,22 @@ export default function Settings() {
           <span className="settings-arrow">›</span>
           <input type="file" accept=".json" id="import-input" style={{ display: 'none' }} onChange={handleImport} />
         </label>
+
+        {/* Repair */}
+        <div className="settings-item card" onClick={handleRepair} id="repair-btn">
+          <div className="settings-item-left">
+            <span className="settings-icon">🛠️</span>
+            <div>
+              <div className="settings-item-title">Repair Wallet Data</div>
+              <div className="settings-item-desc">Recompute balances from history</div>
+            </div>
+          </div>
+          <span className="settings-arrow">›</span>
+        </div>
+
+        {repairStatus && (
+          <div className="import-status" style={{ background: 'var(--color-income-light)', color: 'var(--color-income)' }}>{repairStatus}</div>
+        )}
 
         {importStatus && (
           <div className="import-status">{importStatus}</div>

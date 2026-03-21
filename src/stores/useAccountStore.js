@@ -82,6 +82,23 @@ export const useAccountStore = create(
 
       clearAll: () => set({ accounts: DEFAULT_ACCOUNTS }),
 
+      recalculateBalances: (transactions) => {
+        set((state) => ({
+          accounts: state.accounts.map((a) => {
+            const balance = transactions.reduce((sum, t) => {
+              if (t.type === 'income' && t.accountId === a.id) return sum + t.amount;
+              if (t.type === 'expense' && t.accountId === a.id) return sum - t.amount;
+              if (t.type === 'transfer') {
+                if (t.accountId === a.id) return sum - t.amount;
+                if (t.toAccountId === a.id) return sum + t.amount;
+              }
+              return sum;
+            }, 0);
+            return { ...a, balance };
+          }),
+        }));
+      },
+
       importAccounts: (data) => set({ accounts: data }),
     }),
     {
