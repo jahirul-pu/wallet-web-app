@@ -6,16 +6,25 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-radius: var(--radius-lg);
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  transition: all var(--transition-fast);
   cursor: pointer;
   position: relative;
 }
 
+[data-theme="dark"] .transaction-item {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
 .transaction-item:hover {
-  background: var(--color-bg-input);
-  transform: translateX(2px);
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-hover, var(--color-border));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
 }
 
 .transaction-item:active {
@@ -185,33 +194,58 @@
   letter-spacing: 0.02em;
 }
 
-/* Delete button */
-.txn-delete-btn {
+/* Quick Actions Panel */
+.txn-actions {
   position: absolute;
-  right: 10px;
+  right: 16px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) translateX(10px);
   opacity: 0;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  transition: opacity var(--transition-fast), background var(--transition-fast);
-  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-bg-primary);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  box-shadow: -10px 0 20px var(--color-bg-primary), 0 4px 12px rgba(0,0,0,0.05);
+  transition: all var(--transition-fast) ease-out;
+  pointer-events: none;
+}
+
+[data-theme="dark"] .txn-actions { background: var(--color-bg-secondary); box-shadow: -10px 0 20px var(--color-bg-secondary), 0 4px 12px rgba(0,0,0,0.5); }
+.transaction-item:hover [data-theme="dark"] .txn-actions { background: var(--color-bg-secondary); }
+
+.transaction-item:hover .txn-actions {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  pointer-events: auto;
+}
+
+.txn-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-primary);
-  box-shadow: 0 0 10px var(--color-bg-primary);
+  background: var(--color-bg-input);
+  border: none;
+  border-radius: var(--radius-sm);
+  width: 30px;
+  height: 30px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-.transaction-item:hover .txn-delete-btn {
-  opacity: 0.6;
+.txn-action-btn:hover {
+  transform: translateY(-2px);
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
-.txn-delete-btn:hover {
-  opacity: 1 !important;
-  background: var(--color-danger-light);
-  color: var(--color-expense);
-}
+.txn-action-btn.clear-btn:hover { color: var(--color-income); background: color-mix(in srgb, var(--color-income) 10%, transparent); }
+.txn-action-btn.edit-btn:hover { color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.txn-action-btn.duplicate-btn:hover { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-text-muted) 15%, transparent); }
+.txn-action-btn.delete-btn:hover { color: var(--color-expense); background: color-mix(in srgb, var(--color-expense) 10%, transparent); }
 
 /* Mobile responsive */
 @media (max-width: 768px) {

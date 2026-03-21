@@ -21,10 +21,12 @@ export const useTransactionStore = create(
         return transaction;
       },
 
-      updateTransaction: (id, data) => {
+      updateTransaction: (data) => {
         set((state) => ({
           transactions: state.transactions.map((t) =>
-            t.id === id ? { ...t, ...data, amount: Number(data.amount || t.amount) } : t
+            t.id === data.id 
+              ? { ...t, ...data, amount: data.amount !== undefined ? Number(data.amount) : t.amount } 
+              : t
           ),
         }));
       },

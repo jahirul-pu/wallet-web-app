@@ -627,7 +627,7 @@ export default function Dashboard() {
               )}
             </div>
             {recentTxns.length > 0 ? (
-              <div className="card" style={{ padding: 'var(--space-2)' }}>
+              <div className="recent-txns-column" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 {recentTxns.map((txn) => (
                   <TransactionItem key={txn.id} transaction={txn} />
                 ))}

@@ -11,48 +11,65 @@ import { toInputDate } from '../utils/dateFormat';
 import './AddTransaction.css';
 
 export default function AddTransaction() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const transactions = useTransactionStore((s) => s.transactions);
   const addTransaction = useTransactionStore((s) => s.addTransaction);
+  const updateTransaction = useTransactionStore((s) => s.updateTransaction);
   const accounts = useAccountStore((s) => s.accounts);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const transfer = useAccountStore((s) => s.transfer);
 
-  const initialType = searchParams.get('type') || 'expense';
+  const editId = searchParams.get('edit');
+  const editTxn = useMemo(() => editId ? transactions.find(t => t.id === editId) : null, [editId, transactions]);
+
+  const initialType = editTxn ? editTxn.type : (searchParams.get('type') || 'expense');
 
   const [type, setType] = useState(initialType);
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [date, setDate] = useState(toInputDate());
-  const [party, setParty] = useState('');
+  const [amount, setAmount] = useState(editTxn ? String(editTxn.amount) : '');
+  const [category, setCategory] = useState(editTxn ? editTxn.category : '');
+  const [date, setDate] = useState(editTxn ? editTxn.date : toInputDate());
+  const [party, setParty] = useState(editTxn?.party || '');
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const [salaryMonth, setSalaryMonth] = useState(defaultMonth);
-  const [note, setNote] = useState('');
+  const [salaryMonth, setSalaryMonth] = useState(editTxn?.salaryMonth || defaultMonth);
+  const [note, setNote] = useState(editTxn?.note || '');
 
   const filteredAccounts = useMemo(() => {
     if (type === 'transfer') return accounts;
     return accounts.filter((a) => !a.type || a.type === 'all' || a.type === type);
   }, [accounts, type]);
 
-  const [accountId, setAccountId] = useState(filteredAccounts[0]?.id || '');
-  const [toAccountId, setToAccountId] = useState(accounts[1]?.id || '');
+  const [accountId, setAccountId] = useState(editTxn ? editTxn.accountId : (filteredAccounts[0]?.id || ''));
+  const [toAccountId, setToAccountId] = useState(editTxn && editTxn.type === 'transfer' ? editTxn.toAccountId : (accounts[1]?.id || ''));
 
-  // Keep selected account valid when switching types
+  // Keep selected account valid when switching types (skip if editing to prevent override loops)
   useMemo(() => {
-    if (accountId && !filteredAccounts.find(a => a.id === accountId)) {
+    if (!editTxn && accountId && !filteredAccounts.find(a => a.id === accountId)) {
       setAccountId(filteredAccounts[0]?.id || '');
     }
-  }, [filteredAccounts, accountId]);
+  }, [filteredAccounts, accountId, editTxn]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount || Number(amount) <= 0) return;
+    if (type === 'transfer' && accountId === toAccountId) return;
+    if (type !== 'transfer' && !category) return;
+
+    // Mathematical Ledger Reversal constraint mapping
+    if (editTxn) {
+      if (editTxn.type === 'transfer') {
+        transfer(editTxn.toAccountId, editTxn.accountId, editTxn.amount);
+      } else {
+        const revType = editTxn.type === 'income' ? 'expense' : 'income';
+        adjustBalance(editTxn.accountId, editTxn.amount, revType);
+      }
+    }
 
     if (type === 'transfer') {
-      if (accountId === toAccountId) return;
       transfer(accountId, toAccountId, Number(amount));
-      addTransaction({
+      const payload = {
+        id: editTxn ? editId : undefined,
         type: 'transfer',
         amount: Number(amount),
         category: 'transfer',
@@ -60,15 +77,27 @@ export default function AddTransaction() {
         note: note || `Transfer: ${getAccountName(accountId)} → ${getAccountName(toAccountId)}`,
         accountId,
         toAccountId,
-      });
+      };
+      if (editTxn) updateTransaction(payload);
+      else addTransaction(payload);
     } else {
-      if (!category) return;
-      
-      const payload = { type, amount: Number(amount), category, date, party, note, accountId };
+      const payload = { 
+        id: editTxn ? editId : undefined,
+        type, 
+        amount: Number(amount), 
+        category, 
+        date, 
+        party, 
+        note, 
+        accountId 
+      };
       if (category === 'salary' || category === 'salary_expense') {
         payload.salaryMonth = salaryMonth;
       }
-      addTransaction(payload);
+      
+      if (editTxn) updateTransaction(payload);
+      else addTransaction(payload);
+      
       adjustBalance(accountId, Number(amount), type);
     }
 

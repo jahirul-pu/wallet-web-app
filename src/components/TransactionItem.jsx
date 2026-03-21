@@ -1,11 +1,20 @@
+import { useNavigate } from 'react-router-dom';
 import { getCategoryInfo } from '../utils/categories';
 import { formatAmount } from '../utils/currencies';
 import { formatDate } from '../utils/dateFormat';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useTransactionStore } from '../stores/useTransactionStore';
+import { useAccountStore } from '../stores/useAccountStore';
 import './TransactionItem.css';
 
 export default function TransactionItem({ transaction, onDelete, onClick }) {
+  const navigate = useNavigate();
   const currency = useSettingsStore((s) => s.currency);
+  const addTransaction = useTransactionStore((s) => s.addTransaction);
+  const deleteTransaction = useTransactionStore((s) => s.deleteTransaction);
+  const updateTransaction = useTransactionStore((s) => s.updateTransaction);
+  const adjustBalance = useAccountStore((s) => s.adjustBalance);
+  const transfer = useAccountStore((s) => s.transfer);
   const cat = getCategoryInfo(transaction.category);
   const isIncome = transaction.type === 'income';
   const isTransfer = transaction.type === 'transfer';
@@ -16,6 +25,46 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const isPending = txnDate > today;
+
+  const handleQuickDelete = (e) => {
+    e.stopPropagation();
+    if (onDelete) return onDelete(transaction.id);
+
+    // Global fallback for self-contained use (like Dashboard)
+    if (transaction.type === 'transfer') {
+      transfer(transaction.toAccountId, transaction.accountId, transaction.amount);
+    } else {
+      const reverseType = transaction.type === 'income' ? 'expense' : 'income';
+      adjustBalance(transaction.accountId, transaction.amount, reverseType);
+    }
+    deleteTransaction(transaction.id);
+  };
+
+  const handleDuplicate = (e) => {
+    e.stopPropagation();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { id, ...newTxnData } = transaction; 
+    newTxnData.date = todayStr;
+    
+    // Process new balance physics exactly like fresh creation
+    if (transaction.type === 'transfer') {
+      transfer(transaction.accountId, transaction.toAccountId, transaction.amount);
+    } else {
+      adjustBalance(transaction.accountId, transaction.amount, transaction.type);
+    }
+    addTransaction(newTxnData);
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    const todayStr = new Date().toISOString().split('T')[0];
+    updateTransaction({ ...transaction, date: todayStr });
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    navigate(`/add?edit=${transaction.id}`);
+  };
 
   // Helper to neatly format "YYYY-MM" into "Mar 2026"
   const formatSalaryMonth = (sm) => {
@@ -95,17 +144,23 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
         </div>
       </div>
 
-      {onDelete && (
-        <button
-          className="txn-delete-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(transaction.id);
-          }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      {/* Quick Actions Hover Overlay */}
+      <div className="txn-actions">
+        {isPending && (
+          <button className="txn-action-btn clear-btn" onClick={handleClear} title="Mark Cleared">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </button>
+        )}
+        <button className="txn-action-btn edit-btn" onClick={handleEdit} title="Edit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
         </button>
-      )}
+        <button className="txn-action-btn duplicate-btn" onClick={handleDuplicate} title="Duplicate">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+        <button className="txn-action-btn delete-btn" onClick={handleQuickDelete} title="Delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
     </div>
   );
 }
