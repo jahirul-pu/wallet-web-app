@@ -21,6 +21,7 @@ import './App.css';
 
 import Sidebar from './components/Sidebar';
 import TopNav from './components/TopNav';
+import GlobalAlert from './components/GlobalAlert';
 
 /** Auth pages are rendered full-screen (no sidebar / nav). */
 const AUTH_PATHS = ['/login', '/signup'];
@@ -76,6 +77,7 @@ function AppContent() {
         </main>
         {!hideNav && <BottomNav />}
       </div>
+      <GlobalAlert />
     </>
   );
 }

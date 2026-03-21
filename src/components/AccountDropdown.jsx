@@ -1,41 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { getAccountIcon } from '../utils/accountIcons';
 import './AccountDropdown.css';
 
-const ACCOUNT_ICONS = {
-  cash: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>,
-  bank: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M4 21v-4"/><path d="M20 21v-4"/><path d="M8 21v-4"/><path d="M12 21v-4"/><path d="M16 21v-4"/><path d="M2 9L12 2l10 7v4H2V9z"/></svg>,
-  mobile: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>,
-  card: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>,
-  briefcase: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
-  coin: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="12" y1="2" x2="12" y2="6"/></svg>,
-  moneybag: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  atm: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><rect x="6" y="5" width="12" height="6"/><rect x="8" y="14" width="8" height="2"/></svg>,
-  wallet: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h16l1 12H3L4 8z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>
-};
-
-export function getAccountIcon(account) {
-  const ic = account?.icon;
-  if (ic === '💵') return ACCOUNT_ICONS.cash;
-  if (ic === '🏦') return ACCOUNT_ICONS.bank;
-  if (ic === '📱') return ACCOUNT_ICONS.mobile;
-  if (ic === '💳') return ACCOUNT_ICONS.card;
-  if (ic === '💼') return ACCOUNT_ICONS.briefcase;
-  if (ic === '🪙') return ACCOUNT_ICONS.coin;
-  if (ic === '💰') return ACCOUNT_ICONS.moneybag;
-  if (ic === '🏧') return ACCOUNT_ICONS.atm;
-  if (ic === '👛') return ACCOUNT_ICONS.wallet;
-
-  // Fallback to name inference if icon doesn't match predefined emojis
-  const idStr = account?.id?.toLowerCase() || '';
-  const nameStr = account?.name?.toLowerCase() || '';
-  
-  if (idStr.includes('bank') || nameStr.includes('bank')) return ACCOUNT_ICONS.bank;
-  if (idStr.includes('mobile') || nameStr.includes('mobile')) return ACCOUNT_ICONS.mobile;
-  if (idStr.includes('card') || nameStr.includes('card') || nameStr.includes('credit')) return ACCOUNT_ICONS.card;
-  if (idStr.includes('salary') || nameStr.includes('salary')) return ACCOUNT_ICONS.briefcase;
-  
-  return ACCOUNT_ICONS.cash;
-}
 
 export default function AccountDropdown({ accounts, value, onChange, disabled }) {
   const [isOpen, setIsOpen] = useState(false);

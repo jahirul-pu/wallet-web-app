@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useAccountStore } from '../stores/useAccountStore';
+import { renderAccountIcon } from '../utils/accountIcons';
 import { useDebtStore } from '../stores/useDebtStore';
 import { getMonthKey } from '../utils/dateFormat';
 import { formatAmount } from '../utils/currencies';
@@ -18,6 +20,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const transactions = useTransactionStore((s) => s.transactions);
   const currency = useSettingsStore((s) => s.currency);
+  const accounts = useAccountStore((s) => s.accounts);
   const debts = useDebtStore((s) => s.debts);
 
   const currentMonth = getMonthKey(new Date().toISOString());
@@ -107,6 +110,44 @@ export default function Dashboard() {
         {/* Left Column - Main Vault Activity */}
         <div className="dashboard-col-main">
           <BalanceCard balance={balance} income={income} expense={expense} />
+
+          {/* My Wallets */}
+          <div className="dashboard-section" style={{ animationDelay: '0.12s' }}>
+            <div className="dashboard-section-header">
+              <h2 className="dashboard-section-title">My Wallets</h2>
+              <button
+                className="btn-link"
+                onClick={() => navigate('/accounts')}
+              >
+                See all →
+              </button>
+            </div>
+            <div className="dashboard-wallets-grid">
+              {accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  className="dashboard-wallet-chip card"
+                  onClick={() => navigate('/accounts')}
+                >
+                  <div
+                    className="dashboard-wallet-icon"
+                    style={{ background: `${acc.color}18`, color: acc.color }}
+                  >
+                    {renderAccountIcon(acc.icon, 20)}
+                  </div>
+                  <div className="dashboard-wallet-info">
+                    <div className="dashboard-wallet-name">{acc.name}</div>
+                    <div
+                      className="dashboard-wallet-balance"
+                      style={{ color: acc.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
+                    >
+                      {formatAmount(acc.balance, currency)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Overdue debts alert */}
           {overdueDebts.length > 0 && (

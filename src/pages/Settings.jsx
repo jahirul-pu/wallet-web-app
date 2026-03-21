@@ -277,11 +277,7 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* App info */}
-      <div className="settings-footer">
-        <div className="settings-app-name">💰 Wallet</div>
-        <div className="settings-version">v1.0.0 · Made with ♥</div>
-      </div>
+
 
       {/* Currency Picker */}
       <BottomSheet isOpen={showCurrencySheet} onClose={() => { setShowCurrencySheet(false); setCurrSearch(''); }} title="Select Currency">

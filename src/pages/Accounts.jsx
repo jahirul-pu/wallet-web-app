@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { formatAmount } from '../utils/currencies';
+import { renderAccountIcon } from '../utils/accountIcons';
 import BottomSheet from '../components/BottomSheet';
 import AccountDropdown from '../components/AccountDropdown';
 import CalculatorInput from '../components/CalculatorInput';
@@ -10,21 +11,6 @@ import './Accounts.css';
 const ACCOUNT_ICONS = ['💵', '🏦', '📱', '💳', '💼', '🪙', '💰', '🏧', '👛'];
 const ACCOUNT_COLORS = ['var(--color-income)', '#6366f1', '#ec4899', '#f59e0b', '#0ea5e9', '#06b6d4', '#8b5cf6', '#ef4444', '#84cc16'];
 
-const renderIcon = (ic) => {
-  const sf = { width: 22, height: 22, fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round" };
-  switch(ic) {
-    case '💵': return <svg {...sf} viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>;
-    case '🏦': return <svg {...sf} viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M4 21v-4"/><path d="M20 21v-4"/><path d="M8 21v-4"/><path d="M12 21v-4"/><path d="M16 21v-4"/><path d="M2 9L12 2l10 7v4H2V9z"/></svg>;
-    case '📱': return <svg {...sf} viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>;
-    case '💳': return <svg {...sf} viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>;
-    case '🪙': return <svg {...sf} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="12" y1="2" x2="12" y2="6"/></svg>;
-    case '💰': return <svg {...sf} viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-    case '🏧': return <svg {...sf} viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><rect x="6" y="5" width="12" height="6"/><rect x="8" y="14" width="8" height="2"/></svg>;
-    case '👛': return <svg {...sf} viewBox="0 0 24 24"><path d="M4 8h16l1 12H3L4 8z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>;
-    case '💼': return <svg {...sf} viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
-    default: return ic;
-  }
-};
 
 export default function Accounts() {
   const accounts = useAccountStore((s) => s.accounts);
@@ -104,7 +90,7 @@ export default function Accounts() {
                 className="account-card-icon"
                 style={{ background: `${acc.color}18`, color: acc.color }}
               >
-                {renderIcon(acc.icon)}
+                {renderAccountIcon(acc.icon)}
               </div>
               <div>
                 <div className="account-card-name">{acc.name}</div>
@@ -180,7 +166,7 @@ export default function Accounts() {
             <label>Icon</label>
             <div className="icon-picker">
               {ACCOUNT_ICONS.map((ic) => (
-                <button key={ic} className={`icon-option ${newIcon === ic ? 'active' : ''}`} onClick={() => setNewIcon(ic)} type="button" style={{padding: '8px'}}>{renderIcon(ic)}</button>
+                <button key={ic} className={`icon-option ${newIcon === ic ? 'active' : ''}`} onClick={() => setNewIcon(ic)} type="button" style={{padding: '8px'}}>{renderAccountIcon(ic)}</button>
               ))}
             </div>
           </div>
