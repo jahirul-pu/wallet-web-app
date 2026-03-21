@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -15,6 +15,7 @@ export default function Transactions() {
   const transfer = useAccountStore((s) => s.transfer);
   const currency = useSettingsStore((s) => s.currency);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleDelete = (id) => {
     const txn = transactions.find(t => t.id === id);
@@ -136,9 +137,89 @@ export default function Transactions() {
     return Object.entries(groups).sort((a, b) => new Date(b[0]) - new Date(a[0]));
   }, [filtered]);
 
+  const insights = useMemo(() => {
+    if (filtered.length === 0) return null;
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const getLocalStr = (d) => {
+       const yr = d.getFullYear();
+       const mo = String(d.getMonth() + 1).padStart(2,'0');
+       const da = String(d.getDate()).padStart(2,'0');
+       return `${yr}-${mo}-${da}`;
+    };
+    
+    const todayStr = getLocalStr(today);
+    const yesterdayStr = getLocalStr(yesterday);
+
+    const todayTxns = filtered.filter(t => t.date === todayStr);
+    const yesterdayTxns = filtered.filter(t => t.date === yesterdayStr);
+
+    let text = '';
+    let subText = '';
+    let icon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>;
+
+    // INCOME BIAS
+    const todayIncome = todayTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const yesIncome = yesterdayTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    
+    // EXPENSE BIAS
+    const todayExp = todayTxns.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const yesExp = yesterdayTxns.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
+    if (filterType === 'income' || (filterType === 'all' && todayIncome > 0 && todayIncome >= todayExp)) {
+      const incCount = todayTxns.filter(t => t.type === 'income').length;
+      if (incCount > 0) {
+        text = `You received ${incCount} payment${incCount > 1 ? 's' : ''} today (+${formatAmount(todayIncome, currency)})`;
+        icon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
+        if (yesIncome > 0) {
+          const pct = Math.round(((todayIncome - yesIncome) / yesIncome) * 100);
+          subText = pct > 0 ? `Your income increased ${pct}% vs yesterday` : `Your income dropped ${Math.abs(pct)}% vs yesterday`;
+        } else if (yesIncome === 0 && todayIncome > 0) {
+          subText = `Nice! You had no income yesterday.`;
+        }
+      }
+    } 
+    
+    if (!text && (filterType === 'expense' || (filterType === 'all' && todayExp > 0))) {
+      const expCount = todayTxns.filter(t => t.type === 'expense').length;
+      if (expCount > 0) {
+        text = `You spent ${formatAmount(todayExp, currency)} today across ${expCount} transaction${expCount > 1 ? 's' : ''}`;
+        icon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 12 12 14 14"></polyline></svg>;
+        if (yesExp > 0) {
+          const pct = Math.round(((todayExp - yesExp) / yesExp) * 100);
+          subText = pct >= 0 ? `Spending is ${pct}% higher than yesterday` : `Spending dropped ${Math.abs(pct)}% vs yesterday`;
+        }
+      }
+    }
+
+    if (!text) {
+      const totalAmt = filtered.reduce((s,t) => s + t.amount, 0);
+      text = `Tracking ${filtered.length} total transactions in this view`;
+      if (filterType !== 'all') {
+         subText = `Total aggregate volume: ${formatAmount(totalAmt, currency)}`;
+      }
+    }
+
+    return { text, subText, icon };
+  }, [filtered, filterType, currency]);
+
   return (
     <div className="page" id="transactions-page">
       <h1 className="page-title">Transactions</h1>
+
+      {insights && insights.text && (
+        <div className="intelligence-bar">
+          <div className="insight-icon">{insights.icon}</div>
+          <div className="insight-content">
+            <div className="insight-text">{insights.text}</div>
+            {insights.subText && <div className="insight-subtext">{insights.subText}</div>}
+          </div>
+        </div>
+      )}
 
       <div className="search-bar">
         <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -168,7 +249,7 @@ export default function Transactions() {
         {['all', 'income', 'expense', 'transfer'].map((t) => (
           <button
             key={t}
-            className={`filter-chip ${filterType === t ? 'active' : ''}`}
+            className={`filter-chip ${filterType === t ? 'active ' + t : ''}`}
             onClick={() => setFilterType(t)}
           >
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -244,10 +325,48 @@ export default function Transactions() {
             </div>
           );
         })
+      ) : transactions.length === 0 ? (
+        <div className="empty-state card advanced-empty-state">
+          <div className="empty-illustration">
+             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="url(#gradient-empty)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+               <defs>
+                 <linearGradient id="gradient-empty" x1="0%" y1="0%" x2="100%" y2="100%">
+                   <stop offset="0%" stopColor="var(--color-accent)" />
+                   <stop offset="100%" stopColor="var(--color-income)" />
+                 </linearGradient>
+               </defs>
+               <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+               <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+               <path d="M18 12h2"></path>
+               <circle cx="15" cy="16" r="2"></circle>
+             </svg>
+          </div>
+          <h3>Your ledger is empty</h3>
+          <p>You haven't recorded any income or expenses yet.</p>
+          <button className="btn btn-primary cta-btn" onClick={() => navigate('/add')}>
+            Add your first transaction
+          </button>
+        </div>
       ) : (
-        <div className="empty-state">
-          <div className="icon">📋</div>
-          <p>{search ? 'No transactions found' : 'No transactions yet'}</p>
+        <div className="empty-state card advanced-empty-state">
+          <div className="empty-illustration filter-miss">
+             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+             </svg>
+          </div>
+          <h3>No matches found</h3>
+          <p>Try adjusting your search filters or dates to find what you're looking for.</p>
+          <button className="btn btn-secondary cta-btn" onClick={() => {
+             setSearch('');
+             setFilterType('all');
+             setDateRange('all');
+             setCatFilter('all');
+             setMinAmount('');
+             setMaxAmount('');
+          }}>
+             Clear Filters
+          </button>
         </div>
       )}
     </div>

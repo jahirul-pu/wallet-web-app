@@ -25,18 +25,18 @@
 }
 
 .type-btn.active.income {
-  background: #ecfdf5; /* emerald 50 - very soft */
-  color: #059669; /* emerald 600 - muted but clear green */
+  background: color-mix(in srgb, var(--color-income) 15%, transparent);
+  color: var(--color-income);
 }
 
 .type-btn.active.expense {
-  background: #fff1f2; /* rose 50 - very soft */
-  color: #e11d48; /* rose 600 - muted red */
+  background: color-mix(in srgb, var(--color-expense) 15%, transparent);
+  color: var(--color-expense);
 }
 
 .type-btn.active.transfer {
-  background: var(--color-transfer-light);
-  color: var(--color-transfer);
+  background: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
+  color: var(--color-text-muted);
 }
 
 .amount-input-container {

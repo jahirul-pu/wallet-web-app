@@ -58,9 +58,9 @@
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
-  --space-4: 1.125rem; /* Increased rhythm */
-  --space-5: 1.5rem;
-  --space-6: 2.25rem;
+  --space-4: 1.25rem; /* Increased rhythm */
+  --space-5: 1.75rem; /* Better section breathing room */
+  --space-6: 2.5rem;  /* Wide spacing */
   --space-8: 3rem;
   --space-10: 4rem;
   --space-12: 5rem;
@@ -72,11 +72,11 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
 
-  /* Shadows (Elevated Base) */
-  --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 20px 48px rgba(15, 23, 42, 0.12);
-  --shadow-glow: 0 0 24px rgba(111, 251, 190, 0.3);
+  /* Shadows (Elevated Base - Ultra Soft) */
+  --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.025);
+  --shadow-md: 0 16px 40px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 28px rgba(111, 251, 190, 0.3);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -139,6 +139,10 @@ body {
   font-size: var(--text-base);
   color: var(--color-text-primary);
   background: var(--color-bg-primary);
+  background-image: 
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--color-accent) 6%, transparent) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--color-income) 5%, transparent) 0%, transparent 40%);
+  background-attachment: fixed;
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
