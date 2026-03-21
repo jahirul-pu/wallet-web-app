@@ -9,9 +9,15 @@ import { getMonthKey } from '../utils/dateFormat';
 import { formatAmount } from '../utils/currencies';
 import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
-import { getCategoryInfo } from '../utils/categories';
+import { getCategoryInfo, getExpenseCategories, getIncomeCategories } from '../utils/categories';
 import { toInputDate } from '../utils/dateFormat';
+import { useAnimatedCounter } from '../hooks/useAnimatedCounter';
 import './Dashboard.css';
+
+function AnimatedAmount({ value, currency }) {
+  const animated = useAnimatedCounter(value || 0, 1200);
+  return <>{formatAmount(animated, currency)}</>;
+}
 
 
 
@@ -29,7 +35,19 @@ export default function Dashboard() {
   const [qaType, setQaType] = useState('expense');
   const [qaNote, setQaNote] = useState('');
   const [qaAccountId, setQaAccountId] = useState('');
+  const [qaCategory, setQaCategory] = useState('food');
   const [qaSuccess, setQaSuccess] = useState(false);
+  const [qaExpanded, setQaExpanded] = useState(false);
+
+  const qaCategoryList = useMemo(() => {
+    return qaType === 'income' ? getIncomeCategories() : getExpenseCategories();
+  }, [qaType]);
+
+  const openExpandedQa = (type) => {
+    setQaType(type);
+    setQaCategory(type === 'income' ? 'salary' : 'food');
+    setQaExpanded(true);
+  };
 
   const filteredQaAccounts = useMemo(() => {
     return accounts.filter((a) => !a.type || a.type === 'all' || a.type === qaType);
@@ -50,16 +68,19 @@ export default function Dashboard() {
     addTransaction({
       type: qaType,
       amount: amt,
-      category: 'other',
+      category: qaCategory || (qaType === 'income' ? 'salary' : 'food'),
       date: toInputDate(),
-      note: qaNote || `Quick ${qaType}`,
+      note: qaNote,
       accountId: qaAccountId,
     });
     adjustBalance(qaAccountId, amt, qaType);
     setQaAmount('');
     setQaNote('');
     setQaSuccess(true);
-    setTimeout(() => setQaSuccess(false), 2000);
+    setTimeout(() => {
+      setQaSuccess(false);
+      setQaExpanded(false);
+    }, 1500);
   };
 
   const currentMonth = getMonthKey(new Date().toISOString());
@@ -79,7 +100,7 @@ export default function Dashboard() {
     return { overdueDebts: overdue, totalOwedToMe: owedToMe, totalIOwe: iOwe };
   }, [debts]);
 
-    const { balance, income, expense, recentTxns } = useMemo(() => {
+  const { balance, income, expense, recentTxns } = useMemo(() => {
     const monthTxns = transactions.filter((t) => {
       const d = new Date(t.date);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -106,40 +127,71 @@ export default function Dashboard() {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMo = now.getMonth();
-    const monthExpenses = transactions.filter((t) => {
-      const d = new Date(t.date);
-      return t.type === 'expense' && d.getFullYear() === currentYear && d.getMonth() === currentMo;
-    });
+    
+    let biggestTxn = null;
     const catMap = {};
-    monthExpenses.forEach((t) => {
-      const cat = t.category || 'other_expense';
-      catMap[cat] = (catMap[cat] || 0) + t.amount;
+    const monthTxns = transactions.filter((t) => {
+      const d = new Date(t.date);
+      return d.getFullYear() === currentYear && d.getMonth() === currentMo;
     });
+
+    monthTxns.forEach(t => {
+      if (t.type === 'expense') {
+        const cat = t.category || 'other_expense';
+        catMap[cat] = (catMap[cat] || 0) + t.amount;
+        if (!biggestTxn || t.amount > biggestTxn.amount) {
+           biggestTxn = t;
+        }
+      }
+    });
+
     const totalExpenseAmt = Object.values(catMap).reduce((s, v) => s + v, 0);
-    const categoryBreakdown = Object.entries(catMap)
+    
+    let startPercent = 0;
+    const pieSegments = Object.entries(catMap)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
       .map(([key, amount]) => {
-        const info = getCategoryInfo(key);
-        return { key, name: info.name, amount, percent: totalExpenseAmt > 0 ? (amount / totalExpenseAmt) * 100 : 0 };
+         const info = getCategoryInfo(key);
+         const percentNum = totalExpenseAmt > 0 ? (amount / totalExpenseAmt) * 100 : 0;
+         const segment = { 
+            key, 
+            name: info.name, 
+            amount, 
+            percent: Math.round(percentNum), 
+            startPercent, 
+            color: info.color || '#3b82f6' 
+         };
+         startPercent += percentNum;
+         return segment;
       });
-    const dayOfMonth = now.getDate();
-    const dailyAvg = dayOfMonth > 0 ? totalExpenseAmt / dayOfMonth : 0;
-    const savingsRate = income > 0 ? Math.round(((income - expense) / income) * 100) : 0;
-    const last7 = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const dayLabel = d.toLocaleDateString('en', { weekday: 'short' }).substring(0, 2);
-      const dayTotal = transactions
-        .filter((t) => t.type === 'expense' && t.date === dateStr)
-        .reduce((s, t) => s + t.amount, 0);
-      last7.push({ label: dayLabel, amount: dayTotal });
+
+    const topCategory = pieSegments.length > 0 ? pieSegments[0] : null;
+
+    const weeksData = [];
+    let maxVal = 1;
+    for (let w = 3; w >= 0; w--) {
+       const startDay = new Date(now);
+       startDay.setHours(0,0,0,0);
+       startDay.setDate(now.getDate() - (w * 7) - 6);
+       
+       const endDay = new Date(now);
+       endDay.setHours(23,59,59,999);
+       endDay.setDate(now.getDate() - (w * 7));
+
+       const wTxns = transactions.filter(t => {
+          const d = new Date(t.date);
+          return d >= startDay && d <= endDay;
+       });
+       
+       const inc = wTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+       const exp = wTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+       
+       maxVal = Math.max(maxVal, inc, exp);
+       weeksData.push({ label: `W${4-w}`, inc, exp });
     }
-    const maxDay = Math.max(...last7.map((d) => d.amount), 1);
-    return { categoryBreakdown, dailyAvg, savingsRate, last7, maxDay, totalExpenseAmt };
-  }, [transactions, income, expense]);
+
+    return { totalExpenseAmt, biggestTxn, pieSegments, topCategory, weeksData, maxVal };
+  }, [transactions]);
 
   // Previous month data for % change comparison
   const prevMonth = useMemo(() => {
@@ -200,9 +252,30 @@ export default function Dashboard() {
   const insights = useMemo(() => {
     const items = [];
     const sym = currency?.symbol || '৳';
-
-    // 1. Category spending change vs last month
     const now = new Date();
+
+    // 1. Savings Insight: "You saved ৳12,400 this month (+18%)"
+    const currentSavings = income - expense;
+    const prevSavings = prevMonth.income - prevMonth.expense;
+    if (currentSavings > 0) {
+      let savingsText = `You saved ${sym}${currentSavings.toLocaleString()} this month`;
+      if (prevSavings > 0) {
+        const savingsGrowth = Math.round(((currentSavings - prevSavings) / prevSavings) * 100);
+        if (savingsGrowth > 0) {
+          savingsText += ` (+${savingsGrowth}%)`;
+          items.push({ type: 'positive', icon: '💰', text: savingsText });
+        } else if (savingsGrowth < 0) {
+          savingsText += ` (${savingsGrowth}%)`;
+          items.push({ type: 'warning', icon: '💰', text: savingsText });
+        } else {
+          items.push({ type: 'positive', icon: '💰', text: savingsText });
+        }
+      } else {
+        items.push({ type: 'positive', icon: '💰', text: savingsText });
+      }
+    }
+
+    // 2. Category spending increase vs last month: "Your food spending increased 22% ⚠"
     const cy = now.getFullYear(), cm = now.getMonth();
     const py = cm === 0 ? cy - 1 : cy, pmo = cm === 0 ? 11 : cm - 1;
 
@@ -221,7 +294,6 @@ export default function Dashboard() {
     const currCats = catSpend(cy, cm);
     const prevCats = catSpend(py, pmo);
 
-    // Find biggest category increase
     let biggestIncrease = null;
     Object.entries(currCats).forEach(([cat, amt]) => {
       const prev = prevCats[cat] || 0;
@@ -233,86 +305,82 @@ export default function Dashboard() {
         }
       }
     });
+
     if (biggestIncrease) {
       items.push({
         type: 'warning',
-        icon: '📊',
-        text: `You're spending ${biggestIncrease.pct}% more on ${biggestIncrease.name} this month`,
+        icon: '⚠️',
+        text: `Your ${biggestIncrease.name.toLowerCase()} spending increased ${biggestIncrease.pct}%`,
       });
     }
 
-    // 2. Savings rate change
-    const currSavings = income > 0 ? Math.round(((income - expense) / income) * 100) : 0;
-    const prevSavings = prevMonth.income > 0 ? Math.round(((prevMonth.income - prevMonth.expense) / prevMonth.income) * 100) : 0;
-    const savingsDiff = currSavings - prevSavings;
-    if (Math.abs(savingsDiff) >= 3 && prevMonth.income > 0) {
-      items.push({
-        type: savingsDiff > 0 ? 'positive' : 'warning',
-        icon: savingsDiff > 0 ? '🎯' : '⚠️',
-        text: savingsDiff > 0
-          ? `Your savings rate improved by ${savingsDiff}% — keep it up!`
-          : `Your savings rate dropped by ${Math.abs(savingsDiff)}% — watch your spending`,
-      });
-    }
-
-    // 3. Biggest expense category awareness
-    const topCat = Object.entries(currCats).sort((a, b) => b[1] - a[1])[0];
-    if (topCat && expense > 0) {
-      const info = getCategoryInfo(topCat[0]);
-      const pct = Math.round((topCat[1] / expense) * 100);
-      if (pct >= 30) {
-        items.push({
-          type: 'info',
-          icon: '💡',
-          text: `${info.name} is ${pct}% of your spending — your biggest category`,
-        });
-      }
-    }
-
-    // 4. Income growth
-    if (prevMonth.income > 0 && income > prevMonth.income) {
-      const incGrowth = Math.round(((income - prevMonth.income) / prevMonth.income) * 100);
-      if (incGrowth >= 5) {
-        items.push({
-          type: 'positive',
-          icon: '🚀',
-          text: `Income is up ${incGrowth}% compared to last month`,
-        });
-      }
-    }
-
-    // 5. Spending velocity warning
+    // 3. Goal tracking / general pace: "You’re on track to hit your savings goal"
     const dayOfMonth = now.getDate();
     const daysInMonth = new Date(cy, cm + 1, 0).getDate();
     const projectedExpense = dayOfMonth > 0 ? (expense / dayOfMonth) * daysInMonth : 0;
-    if (prevMonth.expense > 0 && projectedExpense > prevMonth.expense * 1.2 && dayOfMonth >= 7) {
+
+    // Only show pace warnings if we're a few days into the month
+    if (prevMonth.expense > 0 && dayOfMonth >= 5) {
+      if (projectedExpense > prevMonth.expense * 1.1) {
+        items.push({
+          type: 'warning',
+          icon: '📉',
+          text: `You're on pace to overspend by ${Math.round(((projectedExpense / prevMonth.expense) - 1) * 100)}% this month`,
+        });
+      } else if (projectedExpense < prevMonth.expense * 0.9) {
+        items.push({
+          type: 'positive',
+          icon: '📈',
+          text: `You're on track to spend less than last month!`,
+        });
+      }
+    }
+
+    // 4. Overdue Debts Action
+    const overdueCount = overdueDebts.length;
+    if (overdueCount > 0) {
       items.push({
-        type: 'warning',
-        icon: '🔥',
-        text: `At this pace, you'll spend ${sym}${Math.round(projectedExpense).toLocaleString()} — ${Math.round(((projectedExpense / prevMonth.expense) - 1) * 100)}% more than last month`,
+        type: 'negative',
+        icon: '🚨',
+        text: `You have ${overdueCount} overdue debt${overdueCount > 1 ? 's' : ''}. Settle them to avoid penalties.`,
+        action: '/debts',
+        actionText: 'Pay Now'
       });
     }
 
-    // 6. No-spend streak
-    let streak = 0;
-    for (let i = 0; i < 30; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i - 1);
-      const ds = d.toISOString().split('T')[0];
-      const hadExpense = transactions.some((t) => t.type === 'expense' && t.date === ds);
-      if (!hadExpense) streak++;
-      else break;
-    }
-    if (streak >= 2) {
-      items.push({
-        type: 'positive',
-        icon: '✨',
-        text: `${streak}-day no-spend streak — impressive discipline!`,
+    // 5. Unused Wallet Alert
+    if (accounts.length > 1) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+      const idleWallets = accounts.filter(acc => {
+        if (acc.balance <= 0) return false;
+        const hasRecentTxn = transactions.some(t => t.accountId === acc.id && t.date >= thirtyDaysAgoStr);
+        return !hasRecentTxn;
       });
+
+      if (idleWallets.length > 0 && items.length < 4) {
+        items.push({
+          type: 'info',
+          icon: '💤',
+          text: `Your ${idleWallets[0].name} wallet has been idle. Consider investing it.`,
+        });
+      }
+    }
+
+    // If no negative insights, add a generic positive one:
+    if (items.filter(i => i.type === 'positive').length === 0 && items.filter(i => i.type === 'warning' || i.type === 'negative').length === 0) {
+      if (income > 0 && expense < income) {
+        items.push({
+          type: 'positive',
+          icon: '🎯',
+          text: `You're on track to hit your savings goal`,
+        });
+      }
     }
 
     return items.slice(0, 4); // Max 4 insights
-  }, [transactions, income, expense, prevMonth, currency]);
+  }, [transactions, income, expense, prevMonth, currency, overdueDebts, accounts]);
 
   return (
     <div className="page" id="dashboard-page">
@@ -322,38 +390,37 @@ export default function Dashboard() {
             <div className="dashboard-greeting">Good {getGreeting()} 👋</div>
             <h1 className="page-title">Dashboard</h1>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/add')}
-            id="add-transaction-btn-desktop"
-          >
-            + Add
-          </button>
         </div>
 
         {/* Row 1 — Financial Overview */}
         <div className="fin-overview-row">
           <OverviewCard
             label="Total Balance"
-            amount={formatAmount(balance, currency)}
+            amount={<AnimatedAmount value={balance} currency={currency} />}
             change={pctChange(balance, balance - (income - expense) + (prevMonth.income - prevMonth.expense))}
             sparkData={balanceSpark}
-            color="#6FFBBE"
+            color="#38bdf8"
+            onClick={() => navigate('/accounts')}
+            subtitle="from last month"
           />
           <OverviewCard
             label="Monthly Income"
-            amount={formatAmount(income, currency)}
+            amount={<AnimatedAmount value={income} currency={currency} />}
             change={pctChange(income, prevMonth.income)}
             sparkData={incomeSpark}
             color="#34d399"
+            onClick={() => navigate('/transactions?type=income')}
+            subtitle="this month"
           />
           <OverviewCard
             label="Monthly Expense"
-            amount={formatAmount(expense, currency)}
+            amount={<AnimatedAmount value={expense} currency={currency} />}
             change={pctChange(expense, prevMonth.expense)}
             sparkData={expenseSpark}
             color="#fb7185"
             invertChange
+            onClick={() => navigate('/transactions?type=expense')}
+            subtitle="this month"
           />
         </div>
 
@@ -361,9 +428,18 @@ export default function Dashboard() {
         {insights.length > 0 && (
           <div className="smart-insights-row">
             {insights.map((insight, i) => (
-              <div key={i} className={`smart-insight-chip ${insight.type}`}>
-                <span className="smart-insight-icon">{insight.icon}</span>
-                <span className="smart-insight-text">{insight.text}</span>
+              <div
+                key={i}
+                className={`smart-insight-chip ${insight.type} ${insight.action ? 'has-action' : ''}`}
+                onClick={insight.action ? () => navigate(insight.action) : undefined}
+              >
+                <div className="smart-insight-content">
+                  <span className="smart-insight-icon">{insight.icon}</span>
+                  <span className="smart-insight-text">{insight.text}</span>
+                </div>
+                {insight.actionText && (
+                  <button className="insight-action-btn">{insight.actionText}</button>
+                )}
               </div>
             ))}
           </div>
@@ -373,62 +449,91 @@ export default function Dashboard() {
         <div className="dashboard-col-main">
           <BalanceCard balance={balance} income={income} expense={expense} />
 
-          {/* Quick Add Transaction */}
+          {/* Fast Input System */}
           <div className="dashboard-section quick-add-section" style={{ animationDelay: '0.08s' }}>
-            <h2 className="dashboard-section-title">Quick Add</h2>
-            <form className="quick-add-form card" onSubmit={handleQuickAdd}>
-              <div className="qa-type-row">
-                <button
-                  type="button"
-                  className={`qa-type-btn ${qaType === 'expense' ? 'active expense' : ''}`}
-                  onClick={() => setQaType('expense')}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-                  Expense
+            <div className="dashboard-section-header">
+              <h2 className="dashboard-section-title">Fast Input</h2>
+              {qaExpanded && (
+                <button className="btn-link" onClick={() => { setQaExpanded(false); setQaAmount(''); setQaNote(''); }}>
+                  Cancel
                 </button>
-                <button
-                  type="button"
-                  className={`qa-type-btn ${qaType === 'income' ? 'active income' : ''}`}
-                  onClick={() => setQaType('income')}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-                  Income
+              )}
+            </div>
+
+            {!qaExpanded ? (
+              <div className="fast-input-minimal">
+                <button className="fast-btn fast-expense" onClick={() => openExpandedQa('expense')}>
+                  <span className="fast-icon">-</span> Add Expense
+                </button>
+                <button className="fast-btn fast-income" onClick={() => openExpandedQa('income')}>
+                  <span className="fast-icon">+</span> Add Income
                 </button>
               </div>
-              <div className="qa-input-row">
-                <input
-                  type="number"
-                  className="qa-amount-input"
-                  placeholder="0.00"
-                  value={qaAmount}
-                  onChange={(e) => setQaAmount(e.target.value)}
-                  step="any"
-                  min="0"
-                  required
-                />
-                <input
-                  type="text"
-                  className="qa-note-input"
-                  placeholder="Note (optional)"
-                  value={qaNote}
-                  onChange={(e) => setQaNote(e.target.value)}
-                />
-              </div>
-              <div className="qa-bottom-row">
-                <select
-                  className="qa-account-select"
-                  value={qaAccountId}
-                  onChange={(e) => setQaAccountId(e.target.value)}
-                >
-                  {filteredQaAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
+            ) : (
+              <form className="fast-input-expanded card" onSubmit={handleQuickAdd}>
+                <div className={`fast-input-header ${qaType}`}>
+                  <span className="fast-mode-label">{qaType === 'expense' ? 'New Expense' : 'New Income'}</span>
+                  <div className="fast-type-toggle">
+                    <button type="button" className={qaType === 'expense' ? 'active' : ''} onClick={() => { setQaType('expense'); setQaCategory('food'); }}>Exp</button>
+                    <button type="button" className={qaType === 'income' ? 'active' : ''} onClick={() => { setQaType('income'); setQaCategory('salary'); }}>Inc</button>
+                  </div>
+                </div>
+
+                <div className="fast-amount-wrapper">
+                  <span className="fast-currency">{currency?.symbol || '৳'}</span>
+                  <input
+                    type="number"
+                    className="fast-amount-input"
+                    placeholder="0.00"
+                    value={qaAmount}
+                    onChange={(e) => setQaAmount(e.target.value)}
+                    step="any"
+                    min="0"
+                    autoFocus
+                    required
+                  />
+                </div>
+
+                <div className="fast-input-row">
+                  <input
+                    type="text"
+                    className="fast-note-input"
+                    placeholder="What was this for? (optional)"
+                    value={qaNote}
+                    onChange={(e) => setQaNote(e.target.value)}
+                  />
+                </div>
+
+                <div className="fast-categories">
+                  {qaCategoryList.slice(0, 7).map(([key, cat]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`fast-cat-chip ${qaCategory === key ? 'active' : ''}`}
+                      onClick={() => setQaCategory(key)}
+                    >
+                      <span className="fast-cat-icon">{cat.icon}</span>
+                      <span className="fast-cat-name">{cat.name}</span>
+                    </button>
                   ))}
-                </select>
-                <button type="submit" className={`qa-submit-btn ${qaType === 'income' ? 'btn-income' : 'btn-expense'}`}>
-                  {qaSuccess ? '✓ Added' : '+ Add'}
-                </button>
-              </div>
-            </form>
+                </div>
+
+                <div className="fast-footer">
+                  <select
+                    className="fast-account-select"
+                    value={qaAccountId}
+                    onChange={(e) => setQaAccountId(e.target.value)}
+                  >
+                    {filteredQaAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  <button type="submit" className={`fast-submit-btn ${qaType}`}>
+                    {qaSuccess ? '✓ Saved' : '+ Save'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* My Wallets */}
@@ -442,37 +547,52 @@ export default function Dashboard() {
                 See all →
               </button>
             </div>
-            <div className="dashboard-wallets-grid">
-              {accounts.map((acc) => (
-                <div
-                  key={acc.id}
-                  className="dashboard-wallet-chip card"
-                  onClick={() => navigate('/accounts')}
-                >
+            <div className="dashboard-wallets-list">
+              {accounts.map((acc) => {
+                const totalPositiveBal = accounts.reduce((sum, a) => sum + Math.max(0, a.balance), 0);
+                const pct = totalPositiveBal > 0 && acc.balance > 0
+                  ? Math.round((acc.balance / totalPositiveBal) * 100)
+                  : 0;
+
+                return (
                   <div
-                    className="dashboard-wallet-icon"
-                    style={{ background: `${acc.color}18`, color: acc.color }}
+                    key={acc.id}
+                    className="dashboard-wallet-row card"
+                    onClick={() => navigate('/accounts')}
                   >
-                    {renderAccountIcon(acc.icon, 20)}
-                  </div>
-                  <div className="dashboard-wallet-info">
-                    <div className="dashboard-wallet-name">{acc.name}</div>
-                    <div
-                      className="dashboard-wallet-balance"
-                      style={{ color: acc.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
-                    >
-                      {formatAmount(acc.balance, currency)}
+                    <div className="wallet-row-left">
+                      <div
+                        className="wallet-row-icon"
+                        style={{ background: `${acc.color}15`, color: acc.color }}
+                      >
+                        {renderAccountIcon(acc.icon, 20)}
+                      </div>
+                      <div className="wallet-row-info">
+                        <div className="wallet-row-name">{acc.name}</div>
+                        <div className="wallet-row-type" style={{ color: acc.color }}>
+                          {acc.type === 'income' ? 'Income Only' : acc.type === 'expense' ? 'Expense Only' : 'Standard'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="wallet-row-right">
+                      <div className="wallet-row-balances">
+                        <span className="wallet-row-amount">{formatAmount(acc.balance, currency)}</span>
+                        <span className="wallet-row-pct">({pct}%)</span>
+                      </div>
+                      <div className="wallet-row-bar-bg">
+                        <div className="wallet-row-bar-fill" style={{ width: `${pct}%`, background: acc.color }}></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           {/* Overdue debts alert */}
           {overdueDebts.length > 0 && (
             <div className="dashboard-alert" onClick={() => navigate('/debts')}>
-              <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <svg style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
               You have {overdueDebts.length} overdue debt{overdueDebts.length > 1 ? 's' : ''}
             </div>
           )}
@@ -521,7 +641,7 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          
+
           {/* Quick actions (Mainly visible on mobile, grid puts it below) */}
           <div className="dashboard-actions dashboard-actions-mobile">
             <button className="quick-action card" onClick={() => navigate('/add?type=income')}>
@@ -550,59 +670,88 @@ export default function Dashboard() {
               <h2 className="dashboard-section-title">Analytics</h2>
               <span className="analytics-period-badge">This Month</span>
             </div>
-            <div className="analytics-grid">
-              <div className="analytics-stat-card card">
-                <div className="analytics-stat-label">Savings Rate</div>
-                <div className={`analytics-stat-value ${analytics.savingsRate >= 0 ? 'positive' : 'negative'}`}>
-                  {analytics.savingsRate}%
-                </div>
-                <div className="analytics-stat-bar">
-                  <div
-                    className={`analytics-stat-bar-fill ${analytics.savingsRate >= 30 ? 'good' : analytics.savingsRate >= 0 ? 'okay' : 'bad'}`}
-                    style={{ width: `${Math.min(Math.abs(analytics.savingsRate), 100)}%` }}
-                  />
-                </div>
+            
+            {/* 1. Category Insights */}
+            <div className="analytics-insights-row">
+              <div className="analytics-insight-card card">
+                <span className="insight-card-label">Top Category</span>
+                <div className="insight-card-val">{analytics.topCategory ? analytics.topCategory.name : 'None'}</div>
+                <div className="insight-card-sub">{analytics.topCategory ? `${analytics.topCategory.percent}% of spending` : '-'}</div>
               </div>
-              <div className="analytics-stat-card card">
-                <div className="analytics-stat-label">Daily Average</div>
-                <div className="analytics-stat-value">
-                  {formatAmount(analytics.dailyAvg, currency)}
-                </div>
-                <div className="analytics-stat-sublabel">spent per day</div>
+              <div className="analytics-insight-card card">
+                <span className="insight-card-label">Biggest Expense</span>
+                <div className="insight-card-val">{analytics.biggestTxn ? (analytics.biggestTxn.note || getCategoryInfo(analytics.biggestTxn.category).name) : 'None'}</div>
+                <div className="insight-card-sub">{analytics.biggestTxn ? <AnimatedAmount value={analytics.biggestTxn.amount} currency={currency} /> : '-'}</div>
               </div>
             </div>
-            <div className="analytics-trend card">
-              <div className="analytics-trend-title">7-Day Spending</div>
-              <div className="analytics-sparkline">
-                {analytics.last7.map((day, i) => (
-                  <div key={i} className="sparkline-bar-group">
-                    <div className="sparkline-bar-track">
-                      <div
-                        className="sparkline-bar-fill"
-                        style={{ height: `${Math.max((day.amount / analytics.maxDay) * 100, 4)}%` }}
-                        title={formatAmount(day.amount, currency)}
-                      />
-                    </div>
-                    <span className="sparkline-label">{day.label}</span>
-                  </div>
-                ))}
+
+            {/* 2. Income vs Expense Trend (Line) */}
+            <div className="analytics-trend-chart card">
+              <div className="analytics-card-header">
+                 <span>Cashflow Trend</span>
+                 <div className="analytics-legend">
+                    <span className="legend-dot income"></span> Income
+                    <span className="legend-dot expense"></span> Expense
+                 </div>
+              </div>
+              <div className="analytics-line-wrapper">
+                 <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="analytics-svg-line">
+                   {/* Draw lines */}
+                   <polyline 
+                      points={analytics.weeksData.map((w, i) => `${(i / 3) * 100},${40 - (w.inc / analytics.maxVal) * 35}`).join(' ')} 
+                      fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" 
+                   />
+                   <polyline 
+                      points={analytics.weeksData.map((w, i) => `${(i / 3) * 100},${40 - (w.exp / analytics.maxVal) * 35}`).join(' ')} 
+                      fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" 
+                   />
+                 </svg>
+                 <div className="analytics-x-axis">
+                   {analytics.weeksData.map((w, i) => <span key={i}>{w.label}</span>)}
+                 </div>
               </div>
             </div>
-            {analytics.categoryBreakdown.length > 0 && (
-              <div className="analytics-categories card">
-                <div className="analytics-trend-title">Top Spending Categories</div>
-                {analytics.categoryBreakdown.map((cat) => (
-                  <div key={cat.key} className="analytics-cat-row">
-                    <div className="analytics-cat-info">
-                      <span className="analytics-cat-name">{cat.name}</span>
-                      <span className="analytics-cat-amount">{formatAmount(cat.amount, currency)}</span>
+
+            {/* 3. Spending Breakdown (Pie/Donut) */}
+            {analytics.pieSegments.length > 0 && (
+              <div className="analytics-breakdown card">
+                <div className="analytics-card-header">
+                  <span>Spending Breakdown</span>
+                </div>
+                <div className="analytics-pie-row">
+                  <div className="analytics-pie-container">
+                    <svg viewBox="0 0 100 100" className="analytics-donut">
+                      {analytics.pieSegments.map((seg, i) => {
+                         const strokeDasharray = `${seg.percent} ${100 - seg.percent}`;
+                         const strokeDashoffset = 25 - seg.startPercent;
+                         return (
+                           <circle 
+                             key={seg.key}
+                             cx="50" cy="50" r="15.915494309" 
+                             fill="transparent" 
+                             stroke={seg.color} 
+                             strokeWidth="5" 
+                             strokeDasharray={strokeDasharray} 
+                             strokeDashoffset={strokeDashoffset}
+                           />
+                         )
+                      })}
+                    </svg>
+                    <div className="analytics-donut-center">
+                       <span className="donut-total"><AnimatedAmount value={analytics.totalExpenseAmt} currency={currency} /></span>
+                       <span className="donut-lbl">Total Spent</span>
                     </div>
-                    <div className="analytics-cat-bar">
-                      <div className="analytics-cat-bar-fill" style={{ width: `${cat.percent}%` }} />
-                    </div>
-                    <span className="analytics-cat-percent">{Math.round(cat.percent)}%</span>
                   </div>
-                ))}
+                  <div className="analytics-pie-legend">
+                    {analytics.pieSegments.map((seg) => (
+                      <div className="pie-legend-item" key={seg.key}>
+                        <div className="pie-legend-color" style={{ background: seg.color }}></div>
+                        <div className="pie-legend-name">{seg.name}</div>
+                        <div className="pie-legend-pct">{seg.percent}%</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -625,7 +774,7 @@ function getGreeting() {
 }
 
 /* ── Mini Sparkline (SVG) ── */
-function MiniSparkline({ data, color = '#6FFBBE', width = 80, height = 32 }) {
+function MiniSparkline({ data, color = '#6FFBBE', width = 200, height = 60 }) {
   if (!data || data.length < 2) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -640,10 +789,10 @@ function MiniSparkline({ data, color = '#6FFBBE', width = 80, height = 32 }) {
     .join(' ');
 
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none" style={{ display: 'block' }}>
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" fill="none" style={{ display: 'block', position: 'absolute', bottom: 0, left: 0 }}>
       <defs>
         <linearGradient id={`sg-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -656,33 +805,47 @@ function MiniSparkline({ data, color = '#6FFBBE', width = 80, height = 32 }) {
       <polyline
         points={points}
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
 }
 
 /* ── Overview Stat Card ── */
-function OverviewCard({ label, amount, change, sparkData, color, invertChange }) {
+function OverviewCard({ label, amount, change, sparkData, color, invertChange, onClick, subtitle }) {
   const isPositive = invertChange ? change <= 0 : change >= 0;
   const arrow = change >= 0 ? '↑' : '↓';
   const absChange = Math.abs(change);
 
   return (
-    <div className="fin-overview-card card">
-      <div className="fin-overview-top">
-        <span className="fin-overview-label">{label}</span>
-        {change !== 0 && (
-          <span className={`fin-overview-change ${isPositive ? 'positive' : 'negative'}`}>
-            {arrow} {absChange}%
-          </span>
-        )}
+    <div className="fin-overview-card card" onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default', '--card-color': color }}>
+      <div className="fin-overview-bg-gradient" />
+      <div className="fin-overview-content">
+        <div className="fin-overview-top">
+          <span className="fin-overview-label">{label}</span>
+        </div>
+        <div className="fin-overview-amount">{amount}</div>
+        <div className="fin-overview-bottom">
+          {change !== 0 ? (
+            <span className={`fin-overview-change-wrap ${isPositive ? 'positive' : 'negative'}`}>
+              <span className="fin-overview-change">
+                {change > 0 ? '+' : (change < 0 ? '-' : '')}{absChange}% {arrow}
+              </span>
+              <span className="fin-overview-change-text">{subtitle || 'this month'}</span>
+            </span>
+          ) : (
+            <span className="fin-overview-change-wrap neutral">
+              <span className="fin-overview-change">0%</span>
+              <span className="fin-overview-change-text">{subtitle || 'this month'}</span>
+            </span>
+          )}
+        </div>
       </div>
-      <div className="fin-overview-amount">{amount}</div>
       <div className="fin-overview-spark">
-        <MiniSparkline data={sparkData} color={color} width={100} height={28} />
+        <MiniSparkline data={sparkData} color={color} />
       </div>
     </div>
   );

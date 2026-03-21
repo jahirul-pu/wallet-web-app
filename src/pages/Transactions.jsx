@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useAccountStore } from '../stores/useAccountStore';
 import TransactionItem from '../components/TransactionItem';
@@ -9,16 +10,15 @@ export default function Transactions() {
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const transfer = useAccountStore((s) => s.transfer);
+  const location = useLocation();
 
   const handleDelete = (id) => {
     const txn = transactions.find(t => t.id === id);
     if (!txn) return;
 
     if (txn.type === 'transfer') {
-      // Revert transfer: move money back from "to" to "from"
       transfer(txn.toAccountId, txn.accountId, txn.amount);
     } else {
-      // Revert income/expense: just flip the type
       const reverseType = txn.type === 'income' ? 'expense' : 'income';
       adjustBalance(txn.accountId, txn.amount, reverseType);
     }
@@ -28,6 +28,14 @@ export default function Transactions() {
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const typeParam = params.get('type');
+    if (typeParam && ['income', 'expense', 'transfer'].includes(typeParam)) {
+      setFilterType(typeParam);
+    }
+  }, [location.search]);
 
   const filtered = useMemo(() => {
     let list = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));

@@ -1,162 +1,263 @@
-.balance-card {
-  position: relative;
-  z-index: 1;
-  margin-bottom: var(--space-6);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.balance-card:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 8px 32px rgba(20, 184, 166, 0.25);
-}
-
-.balance-card-label {
-  font-size: var(--text-sm);
-  opacity: 0.85;
-  margin-bottom: var(--space-1);
-  font-weight: 500;
-  position: relative;
-  z-index: 1;
-}
-
-.balance-card-amount {
-  font-family: var(--font-heading);
-  font-size: var(--text-4xl);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  margin-bottom: var(--space-5);
-  position: relative;
-  z-index: 1;
-  text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
-}
-
-.balance-card-row {
-  display: flex;
-  gap: var(--space-6);
-  position: relative;
-  z-index: 1;
-}
-
-.balance-card-stat {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.balance-card-stat-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-sm);
-  font-weight: 700;
-}
-
-.balance-card-stat-icon.income {
-  background: rgba(255, 255, 255, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.balance-card-stat-icon.income:hover {
-  transform: scale(1.1);
-}
-
-.balance-card-stat-icon.expense {
-  background: rgba(255, 255, 255, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.balance-card-stat-icon.expense:hover {
-  transform: scale(1.1);
-}
-
-.balance-card-stat-label {
-  font-size: var(--text-xs);
-  opacity: 0.75;
-}
-
-.balance-card-stat-value {
-  font-weight: 600;
-  font-size: var(--text-sm);
-}
-
-/* --- Web-Friendly Vault Assets Card --- */
-.vault-assets-card {
+/* BalanceCard.css */
+.vault-command-card {
   background: #0F172A; /* Deep Slate */
   color: #F7F9FB;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: var(--space-6);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.3);
   margin-bottom: var(--space-6);
-  border: 1px solid rgba(255,255,255,0.05);
-  transition: transform 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  overflow: hidden;
+  position: relative;
 }
 
-.vault-assets-card:hover {
-  transform: translateY(-2px);
+.vault-command-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px -8px rgba(111, 251, 190, 0.15);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-.vault-assets-header {
+.command-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-6);
+  z-index: 2;
 }
 
-.vault-assets-left {
+.command-filters {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  border-radius: var(--radius-md);
+}
+
+.command-filter {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.command-filter:hover {
+  color: #fff;
+}
+
+.command-filter.active {
+  background: #334155;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.command-details-btn {
+  background: transparent;
+  border: none;
+  color: #6FFBBE;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.command-details-btn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.command-card-body {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-6);
+  z-index: 2;
+}
+
+.command-col-left {
   flex: 1;
 }
 
-.vault-assets-right {
-  flex: 0.8;
-  max-width: 250px;
-  height: 90px;
+.command-col-right {
+  flex: 0.9;
+  max-width: 280px;
+  height: 120px;
   display: flex;
   align-items: flex-end;
 }
 
-.vault-trend-line {
+.command-chart {
   width: 100%;
   height: 100%;
 }
 
-.vault-assets-growth {
+.command-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-2);
+}
+
+.command-balance {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: var(--space-2);
+}
+
+.command-growth {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-5);
-  animation: slideUp 0.4s ease 0.2s both;
 }
 
 .growth-badge {
-  background: rgba(111, 251, 190, 0.15);
-  color: #6FFBBE; /* Emerald Neon */
-  padding: 4px 8px;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
+  font-size: 0.75rem;
   font-weight: 700;
+}
+
+.growth-badge.positive {
+  background: rgba(111, 251, 190, 0.15);
+  color: #6FFBBE;
   border: 1px solid rgba(111, 251, 190, 0.3);
 }
 
+.growth-badge.negative {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.growth-badge.neutral {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .growth-text {
-  font-size: var(--text-xs);
-  color: #94a3b8; /* Slate Gray */
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.command-stats {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.cmd-stat-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  flex: 1;
+}
+
+.cmd-stat-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cmd-stat-icon.income {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+
+.cmd-stat-icon.expense {
+  background: rgba(251, 113, 133, 0.15);
+  color: #fb7185;
+}
+
+.cmd-stat-lbl {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.cmd-stat-val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.command-micro-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  z-index: 2;
+}
+
+.cmd-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #fff;
+}
+
+.cmd-action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.cmd-action-btn.solid-income {
+  background: #059669; /* emerald */
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.cmd-action-btn.solid-expense {
+  background: #e11d48; /* rose */
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.cmd-action-btn.solid-transfer {
+  background: #3b82f6; /* blue */
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.cmd-action-icon {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 @media (max-width: 768px) {
-  .vault-assets-header {
+  .command-card-body {
     flex-direction: column;
-    align-items: flex-start;
   }
-  .vault-assets-right {
+  .command-col-right {
     max-width: 100%;
-    width: 100%;
     margin-top: var(--space-4);
   }
-  .balance-card-row {
+  .command-micro-actions {
     flex-direction: column;
-    gap: var(--space-4);
   }
 }
