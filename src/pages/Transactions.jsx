@@ -60,7 +60,12 @@ export default function Transactions() {
 
   const filtered = useMemo(() => {
     // 1. Calculate running balances chronologically first
-    const chronological = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const chronological = [...transactions].sort((a, b) => {
+      const dateDiff = new Date(a.date) - new Date(b.date);
+      if (dateDiff !== 0) return dateDiff;
+      return new Date(a.createdAt || 0) - new Date(b.createdAt || 0); // Strict same-day order (Oldest first)
+    });
+    
     let runningBal = 0;
     const annotated = chronological.map(t => {
       if (t.type === 'income') runningBal += t.amount;
@@ -69,7 +74,11 @@ export default function Transactions() {
     });
 
     // 2. Sort newest to oldest for display
-    let list = annotated.sort((a, b) => new Date(b.date) - new Date(a.date));
+    let list = annotated.sort((a, b) => {
+      const dateDiff = new Date(b.date) - new Date(a.date);
+      if (dateDiff !== 0) return dateDiff;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); // Strict same-day order (Newest first)
+    });
 
     // Type Filter
     if (filterType !== 'all') {
