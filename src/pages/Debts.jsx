@@ -1,8 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useDebtStore } from '../stores/useDebtStore';
+import { useAccountStore } from '../stores/useAccountStore';
+import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { formatAmount } from '../utils/currencies';
 import { formatDate, isOverdue, daysUntil, toInputDate } from '../utils/dateFormat';
+import { getAccountIcon } from '../utils/accountIcons';
 import BottomSheet from '../components/BottomSheet';
 import DatePicker from '../components/DatePicker';
 import CalculatorInput from '../components/CalculatorInput';
@@ -17,6 +20,9 @@ export default function Debts() {
   const deletePayment = useDebtStore((s) => s.deletePayment);
   const editPayment = useDebtStore((s) => s.editPayment);
   const currency = useSettingsStore((s) => s.currency);
+  const accounts = useAccountStore((s) => s.accounts);
+  const adjustBalance = useAccountStore((s) => s.adjustBalance);
+  const addTransaction = useTransactionStore((s) => s.addTransaction);
 
   const { totalOwedToMe, totalIOwe } = useMemo(() => ({
     totalOwedToMe: debts.filter((d) => d.type === 'owed_to_me' && d.status === 'active').reduce((sum, d) => sum + (d.totalAmount - d.paidAmount), 0),
@@ -38,6 +44,8 @@ export default function Debts() {
   const [newAmount, setNewAmount] = useState('');
   const [newReason, setNewReason] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
+  const [creditToWallet, setCreditToWallet] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
 
   const filteredDebts = debts.filter((d) => d.status === tab);
 
@@ -50,7 +58,37 @@ export default function Debts() {
       reason: newReason,
       dueDate: newDueDate || null,
     });
+
+    // Credit/debit to wallet if enabled
+    if (creditToWallet && selectedAccountId) {
+      const amt = Number(newAmount);
+      if (newType === 'i_owe') {
+        // Loan received → money comes IN to your wallet
+        adjustBalance(selectedAccountId, amt, 'income');
+        addTransaction({
+          type: 'income',
+          amount: amt,
+          category: 'other',
+          date: toInputDate(),
+          note: `Loan from ${newPerson}${newReason ? ' — ' + newReason : ''}`,
+          accountId: selectedAccountId,
+        });
+      } else {
+        // Lent money → money goes OUT from your wallet
+        adjustBalance(selectedAccountId, amt, 'expense');
+        addTransaction({
+          type: 'expense',
+          amount: amt,
+          category: 'other',
+          date: toInputDate(),
+          note: `Lent to ${newPerson}${newReason ? ' — ' + newReason : ''}`,
+          accountId: selectedAccountId,
+        });
+      }
+    }
+
     setNewPerson(''); setNewAmount(''); setNewReason(''); setNewDueDate('');
+    setCreditToWallet(false);
     setShowAddSheet(false);
   };
 
@@ -231,6 +269,41 @@ export default function Debts() {
           <div className="input-group"><label>Amount</label><CalculatorInput value={newAmount} onChange={setNewAmount} /></div>
           <div className="input-group"><label>Reason (optional)</label><input className="input" placeholder="What for?" value={newReason} onChange={(e) => setNewReason(e.target.value)} /></div>
           <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Due Date (optional)</label><DatePicker value={newDueDate} onChange={setNewDueDate} /></div>
+
+          {/* Credit/Debit to Wallet */}
+          <div className="input-group">
+            <label className="qa-wallet-toggle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}>
+              <span>{newType === 'i_owe' ? 'Credit to a Wallet' : 'Debit from a Wallet'}</span>
+              <div style={{ position: 'relative' }}>
+                <input type="checkbox" checked={creditToWallet} onChange={(e) => setCreditToWallet(e.target.checked)} style={{ display: 'none' }} />
+                <div className={`toggle-switch ${creditToWallet ? 'on' : ''}`} style={{ width: '44px', height: '24px', background: creditToWallet ? 'var(--color-accent)' : 'var(--color-bg-input)', borderRadius: '12px', position: 'relative', transition: 'all 150ms ease', border: `1px solid ${creditToWallet ? 'var(--color-accent)' : 'var(--color-border)'}`, cursor: 'pointer' }}>
+                  <div style={{ width: '18px', height: '18px', background: creditToWallet ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)', borderRadius: '50%', position: 'absolute', top: '2px', left: creditToWallet ? '22px' : '2px', transition: 'all 150ms ease' }} />
+                </div>
+              </div>
+            </label>
+          </div>
+
+          {creditToWallet && (
+            <div className="input-group">
+              <label>{newType === 'i_owe' ? 'Receive money into' : 'Send money from'}</label>
+              <div className="debt-account-picker">
+                {accounts.map((acc) => (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    className={`debt-account-option ${selectedAccountId === acc.id ? 'active' : ''}`}
+                    onClick={() => setSelectedAccountId(acc.id)}
+                  >
+                    <span className="debt-account-icon" style={{ background: `${acc.color}18`, color: acc.color }}>
+                      {getAccountIcon(acc, 18)}
+                    </span>
+                    <span>{acc.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button className="btn btn-primary submit-btn" onClick={handleAddDebt}>Add</button>
         </div>
       </BottomSheet>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -9,6 +9,7 @@ import { getMonthKey } from '../utils/dateFormat';
 import { formatAmount } from '../utils/currencies';
 import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
+import { toInputDate } from '../utils/dateFormat';
 import './Dashboard.css';
 
 
@@ -18,7 +19,35 @@ export default function Dashboard() {
   const transactions = useTransactionStore((s) => s.transactions);
   const currency = useSettingsStore((s) => s.currency);
   const accounts = useAccountStore((s) => s.accounts);
+  const addTransaction = useTransactionStore((s) => s.addTransaction);
+  const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const debts = useDebtStore((s) => s.debts);
+
+  // Quick-add state
+  const [qaAmount, setQaAmount] = useState('');
+  const [qaType, setQaType] = useState('expense');
+  const [qaNote, setQaNote] = useState('');
+  const [qaAccountId, setQaAccountId] = useState(accounts[0]?.id || '');
+  const [qaSuccess, setQaSuccess] = useState(false);
+
+  const handleQuickAdd = (e) => {
+    e.preventDefault();
+    const amt = Number(qaAmount);
+    if (!amt || amt <= 0) return;
+    addTransaction({
+      type: qaType,
+      amount: amt,
+      category: 'other',
+      date: toInputDate(),
+      note: qaNote || `Quick ${qaType}`,
+      accountId: qaAccountId,
+    });
+    adjustBalance(qaAccountId, amt, qaType);
+    setQaAmount('');
+    setQaNote('');
+    setQaSuccess(true);
+    setTimeout(() => setQaSuccess(false), 2000);
+  };
 
   const currentMonth = getMonthKey(new Date().toISOString());
 
@@ -79,6 +108,64 @@ export default function Dashboard() {
         {/* Left Column - Main Vault Activity */}
         <div className="dashboard-col-main">
           <BalanceCard balance={balance} income={income} expense={expense} />
+
+          {/* Quick Add Transaction */}
+          <div className="dashboard-section quick-add-section" style={{ animationDelay: '0.08s' }}>
+            <h2 className="dashboard-section-title">Quick Add</h2>
+            <form className="quick-add-form card" onSubmit={handleQuickAdd}>
+              <div className="qa-type-row">
+                <button
+                  type="button"
+                  className={`qa-type-btn ${qaType === 'expense' ? 'active expense' : ''}`}
+                  onClick={() => setQaType('expense')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                  Expense
+                </button>
+                <button
+                  type="button"
+                  className={`qa-type-btn ${qaType === 'income' ? 'active income' : ''}`}
+                  onClick={() => setQaType('income')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                  Income
+                </button>
+              </div>
+              <div className="qa-input-row">
+                <input
+                  type="number"
+                  className="qa-amount-input"
+                  placeholder="0.00"
+                  value={qaAmount}
+                  onChange={(e) => setQaAmount(e.target.value)}
+                  step="any"
+                  min="0"
+                  required
+                />
+                <input
+                  type="text"
+                  className="qa-note-input"
+                  placeholder="Note (optional)"
+                  value={qaNote}
+                  onChange={(e) => setQaNote(e.target.value)}
+                />
+              </div>
+              <div className="qa-bottom-row">
+                <select
+                  className="qa-account-select"
+                  value={qaAccountId}
+                  onChange={(e) => setQaAccountId(e.target.value)}
+                >
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+                <button type="submit" className="qa-submit-btn">
+                  {qaSuccess ? '✓ Added' : '+ Add'}
+                </button>
+              </div>
+            </form>
+          </div>
 
           {/* My Wallets */}
           <div className="dashboard-section" style={{ animationDelay: '0.12s' }}>
