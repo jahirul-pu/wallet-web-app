@@ -6,6 +6,7 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import CategoryPicker from '../components/CategoryPicker';
 import AccountDropdown from '../components/AccountDropdown';
 import CalculatorInput from '../components/CalculatorInput';
+import DatePicker from '../components/DatePicker';
 import { toInputDate } from '../utils/dateFormat';
 import './AddTransaction.css';
 
@@ -121,13 +122,11 @@ export default function AddTransaction() {
         )}
 
         {/* Date */}
-        <div className="input-group">
+        <div className="input-group" style={{ position: 'relative', zIndex: 8 }}>
           <label>Date</label>
-          <input
-            type="date"
-            className="input"
+          <DatePicker
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={setDate}
             id="date-input"
           />
         </div>

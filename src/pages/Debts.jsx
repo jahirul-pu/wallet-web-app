@@ -4,6 +4,8 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { formatAmount } from '../utils/currencies';
 import { formatDate, isOverdue, daysUntil } from '../utils/dateFormat';
 import BottomSheet from '../components/BottomSheet';
+import DatePicker from '../components/DatePicker';
+import CalculatorInput from '../components/CalculatorInput';
 import './Debts.css';
 
 export default function Debts() {
@@ -176,9 +178,9 @@ export default function Debts() {
             <button className={`type-btn ${newType === 'owed_to_me' ? 'active income' : ''}`} onClick={() => setNewType('owed_to_me')} type="button">Owed to Me</button>
           </div>
           <div className="input-group"><label>Person Name</label><input className="input" placeholder="Who?" value={newPerson} onChange={(e) => setNewPerson(e.target.value)} /></div>
-          <div className="input-group"><label>Amount</label><input className="input" type="number" placeholder="0.00" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} min="0" /></div>
+          <div className="input-group"><label>Amount</label><CalculatorInput value={newAmount} onChange={setNewAmount} /></div>
           <div className="input-group"><label>Reason (optional)</label><input className="input" placeholder="What for?" value={newReason} onChange={(e) => setNewReason(e.target.value)} /></div>
-          <div className="input-group"><label>Due Date (optional)</label><input className="input" type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} /></div>
+          <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Due Date (optional)</label><DatePicker value={newDueDate} onChange={setNewDueDate} /></div>
           <button className="btn btn-primary submit-btn" onClick={handleAddDebt}>Add</button>
         </div>
       </BottomSheet>
@@ -189,7 +191,7 @@ export default function Debts() {
           <div style={{ textAlign: 'center', marginBottom: 'var(--space-2)' }}>
             <div className="debt-card-total">Remaining: {formatAmount((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0), currency)}</div>
           </div>
-          <div className="input-group"><label>Payment Amount</label><input className="input" type="number" placeholder="0.00" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} min="0" /></div>
+          <div className="input-group"><label>Payment Amount</label><CalculatorInput value={payAmount} onChange={setPayAmount} /></div>
           <div className="input-group"><label>Note (optional)</label><input className="input" placeholder="Payment note..." value={payNote} onChange={(e) => setPayNote(e.target.value)} /></div>
           <button className="btn btn-primary submit-btn" onClick={handlePay}>Record Payment</button>
         </div>
