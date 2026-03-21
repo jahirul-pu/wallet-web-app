@@ -22,6 +22,93 @@
   object-fit: contain;
 }
 
+/* ── Status Layer (Balance Preview) ── */
+.sidebar-status-card {
+  margin: 0 var(--space-4) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.sidebar-status-label {
+  font-family: var(--sb-font);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.sidebar-status-amount {
+  font-family: var(--sb-font);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f1f5f9;
+  line-height: 1.2;
+}
+
+.sidebar-status-net {
+  font-family: var(--sb-font);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.sidebar-status-net.positive {
+  color: var(--sb-green-primary);
+}
+
+.sidebar-status-net.negative {
+  color: #fb7185;
+}
+
+/* ── Live Badges ── */
+.sidebar-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(111, 251, 190, 0.15);
+  color: var(--sb-green-primary);
+  font-family: var(--sb-font);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-badge.warning {
+  background: rgba(251, 113, 133, 0.15);
+  color: #fb7185;
+}
+
+/* ── Notification Dot ── */
+.sidebar-link-icon {
+  position: relative;
+}
+
+.sidebar-notif-dot {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fb7185;
+  box-shadow: 0 0 6px rgba(251, 113, 133, 0.6);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -349,4 +436,25 @@
 /* Override the active ::before in collapsed (was the glow bar) */
 .app-sidebar.collapsed .sidebar-link.active::after {
   content: attr(data-tooltip);
+}
+
+/* Status card & badges in collapsed mode */
+.app-sidebar.collapsed .sidebar-status-card {
+  margin: 0 var(--space-2) var(--space-3);
+  padding: var(--space-2);
+  text-align: center;
+}
+
+.app-sidebar.collapsed .sidebar-status-label,
+.app-sidebar.collapsed .sidebar-status-net {
+  display: none;
+}
+
+.app-sidebar.collapsed .sidebar-status-amount {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.app-sidebar.collapsed .sidebar-badge {
+  display: none;
 }

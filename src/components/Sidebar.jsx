@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useAccountStore } from '../stores/useAccountStore';
+import { useTransactionStore } from '../stores/useTransactionStore';
+import { useDebtStore } from '../stores/useDebtStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
 import logoImg from '../assets/logo.png';
 import './Sidebar.css';
 
@@ -103,6 +107,10 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const logOut = useAuthStore((s) => s.logOut);
   const user = useAuthStore((s) => s.user);
+  const accounts = useAccountStore((s) => s.accounts);
+  const transactions = useTransactionStore((s) => s.transactions);
+  const debts = useDebtStore((s) => s.debts);
+  const currency = useSettingsStore((s) => s.currency);
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
   });
@@ -115,11 +123,56 @@ export default function Sidebar() {
     });
   };
 
+  // ── Live Data ──
+  const totalBalance = useMemo(() => accounts.reduce((s, a) => s + a.balance, 0), [accounts]);
+
+  const monthlyNet = useMemo(() => {
+    const now = new Date();
+    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return transactions.reduce((sum, t) => {
+      const d = new Date(t.date);
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (k !== key) return sum;
+      if (t.type === 'income') return sum + t.amount;
+      if (t.type === 'expense') return sum - t.amount;
+      return sum;
+    }, 0);
+  }, [transactions]);
+
+  const todayTxnCount = useMemo(() => {
+    const today = new Date().toDateString();
+    return transactions.filter((t) => new Date(t.date).toDateString() === today).length;
+  }, [transactions]);
+
+  const overdueCount = useMemo(() => {
+    const now = new Date(new Date().toDateString());
+    return debts.filter((d) => d.status === 'active' && d.dueDate && new Date(d.dueDate) < now).length;
+  }, [debts]);
+
+  const fmt = (n) => {
+    const abs = Math.abs(n);
+    if (abs >= 1e6) return (abs / 1e6).toFixed(1) + 'M';
+    if (abs >= 1e3) return (abs / 1e3).toFixed(1) + 'K';
+    return abs.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  };
+
   return (
     <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-brand">
         <img src={logoImg} alt="Purrfect Finance" className="sidebar-logo" />
       </div>
+
+      {/* ── Balance Preview Card ── */}
+      <div className="sidebar-status-card">
+        <div className="sidebar-status-label">Vault Balance</div>
+        <div className="sidebar-status-amount">
+          {currency?.symbol || '৳'}{fmt(totalBalance)}
+        </div>
+        <div className={`sidebar-status-net ${monthlyNet >= 0 ? 'positive' : 'negative'}`}>
+          {monthlyNet >= 0 ? '↑' : '↓'} {currency?.symbol || '৳'}{fmt(monthlyNet)} this month
+        </div>
+      </div>
+
       <nav className="sidebar-nav">
         {NAV_GROUPS.map((group, gi) => (
           <div className="sidebar-group" key={gi}>
@@ -131,8 +184,21 @@ export default function Sidebar() {
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                 data-tooltip={item.label}
               >
-                <span className="sidebar-link-icon">{item.icon}</span>
+                <span className="sidebar-link-icon">
+                  {item.icon}
+                  {/* Notification dot for Debts */}
+                  {item.path === '/debts' && overdueCount > 0 && (
+                    <span className="sidebar-notif-dot" />
+                  )}
+                </span>
                 <span className="sidebar-link-label">{item.label}</span>
+                {/* Live badges */}
+                {item.path === '/transactions' && todayTxnCount > 0 && (
+                  <span className="sidebar-badge">{todayTxnCount}</span>
+                )}
+                {item.path === '/debts' && overdueCount > 0 && (
+                  <span className="sidebar-badge warning">{overdueCount}</span>
+                )}
               </NavLink>
             ))}
           </div>
