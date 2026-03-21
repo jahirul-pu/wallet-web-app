@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
+import logoImg from '../assets/logo.png';
 import './Sidebar.css';
 
 const HomeIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
@@ -28,7 +29,7 @@ export default function Sidebar() {
   return (
     <aside className="app-sidebar">
       <div className="sidebar-brand">
-        PURRFECT FINANCE
+        <img src={logoImg} alt="Purrfect Finance" className="sidebar-logo" />
       </div>
       <nav className="sidebar-nav">
         {MENU_ITEMS.map((item) => (
