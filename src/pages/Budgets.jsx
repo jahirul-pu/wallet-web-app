@@ -6,6 +6,7 @@ import { getCategoryInfo, getExpenseCategories } from '../utils/categories';
 import { getMonthKey } from '../utils/dateFormat';
 import { formatAmount } from '../utils/currencies';
 import BottomSheet from '../components/BottomSheet';
+import CalculatorInput from '../components/CalculatorInput';
 import '../components/CategoryPicker.css';
 import './Budgets.css';
 
@@ -153,7 +154,7 @@ export default function Budgets() {
           </div>
           <div className="input-group">
             <label>Budget Amount</label>
-            <input className="input" type="number" placeholder="0.00" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} min="0" step="0.01" />
+            <CalculatorInput value={newAmount} onChange={setNewAmount} />
           </div>
           <button className="btn btn-primary submit-btn" onClick={handleAdd}>Set Budget</button>
         </div>

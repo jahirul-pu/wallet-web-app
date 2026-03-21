@@ -1,0 +1,90 @@
+.calculator-input-wrapper {
+  background: var(--color-bg-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.calculator-input-wrapper:focus-within {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+.calc-icon-btn:hover {
+  color: var(--color-accent) !important;
+  opacity: 1 !important;
+}
+
+.mini-calculator-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px; /* Small calculator layout */
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+}
+
+@media (max-width: 480px) {
+  .mini-calculator-popup {
+    width: 100%;
+    left: 0;
+  }
+}
+
+.calculator-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.calculator-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.calc-btn {
+  flex: 1;
+  padding: 12px 0;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.calc-btn:active,
+.calc-btn:hover {
+  background: var(--color-border);
+}
+
+.calc-btn.op {
+  color: var(--color-accent);
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+.calc-btn.primary {
+  background: var(--color-accent);
+  color: var(--color-text-inverse) !important;
+  border-color: var(--color-accent);
+}
+
+.calc-btn.submit-btn {
+  background: var(--color-accent) !important;
+  color: var(--color-text-inverse) !important;
+  text-transform: uppercase;
+  font-size: var(--text-base);
+  letter-spacing: 1px;
+}

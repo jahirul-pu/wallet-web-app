@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { formatAmount } from '../utils/currencies';
 import BottomSheet from '../components/BottomSheet';
 import AccountDropdown from '../components/AccountDropdown';
+import CalculatorInput from '../components/CalculatorInput';
 import './Accounts.css';
 
 const ACCOUNT_ICONS = ['💵', '🏦', '📱', '💳', '💼', '🪙', '💰', '🏧', '👛'];
@@ -210,7 +211,7 @@ export default function Accounts() {
           </div>
           <div className="input-group">
             <label>Amount</label>
-            <input className="input" type="number" placeholder="0.00" value={transferAmt} onChange={(e) => setTransferAmt(e.target.value)} min="0" step="0.01" />
+            <CalculatorInput value={transferAmt} onChange={setTransferAmt} />
           </div>
           <button className="btn btn-primary submit-btn" onClick={handleTransfer}>Transfer</button>
         </div>

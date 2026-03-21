@@ -5,6 +5,7 @@ import { useAccountStore } from '../stores/useAccountStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import CategoryPicker from '../components/CategoryPicker';
 import AccountDropdown from '../components/AccountDropdown';
+import CalculatorInput from '../components/CalculatorInput';
 import { toInputDate } from '../utils/dateFormat';
 import './AddTransaction.css';
 
@@ -82,15 +83,9 @@ export default function AddTransaction() {
       <form onSubmit={handleSubmit} className="add-form">
         {/* Amount */}
         <div className="amount-input-container">
-          <input
-            type="number"
-            className="amount-input"
-            placeholder="0.00"
+          <CalculatorInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            min="0"
-            step="0.01"
-            autoFocus
+            onChange={setAmount}
             id="amount-input"
           />
         </div>
