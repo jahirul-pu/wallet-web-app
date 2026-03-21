@@ -9,6 +9,8 @@ const SettingsIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill=
 const GridIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>;
 
 const DebtIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>;
+const LogOutIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
+const LogInIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 5 12 10 7"></polyline><line x1="15" y1="12" x2="5" y2="12"></line></svg>;
 
 const MENU_ITEMS = [
   { path: '/', label: 'Dashboard', icon: <HomeIcon /> },
@@ -16,7 +18,6 @@ const MENU_ITEMS = [
   { path: '/transactions', label: 'Transactions', icon: <HistoryIcon /> },
   { path: '/budgets', label: 'Budgets', icon: <CardIcon /> },
   { path: '/debts', label: 'Debts & Loans', icon: <DebtIcon /> },
-  { path: '/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 
 export default function Sidebar() {
@@ -42,16 +43,24 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <a href="#!" className="sidebar-footer-link">Support & Security</a>
-        {user ? (
-          <button className="sidebar-logout" onClick={() => logOut()}>
-            Secure Logout
-          </button>
-        ) : (
-          <button className="sidebar-logout" onClick={() => navigate('/login')}>
-            Sign In
-          </button>
-        )}
+        <div className="sidebar-footer-actions">
+          <NavLink
+            to="/settings"
+            title="Settings"
+            className={({ isActive }) => `sidebar-link icon-only ${isActive ? 'active' : ''}`}
+          >
+            <span className="sidebar-link-icon"><SettingsIcon /></span>
+          </NavLink>
+          {user ? (
+            <button className="sidebar-logout icon-only" onClick={() => logOut()} title="Secure Logout">
+              <LogOutIcon />
+            </button>
+          ) : (
+            <button className="sidebar-logout icon-only" onClick={() => navigate('/login')} title="Sign In">
+              <LogInIcon />
+            </button>
+          )}
+        </div>
       </div>
     </aside>
   );

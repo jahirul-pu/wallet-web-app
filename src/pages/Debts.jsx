@@ -44,8 +44,7 @@ export default function Debts() {
   const [newAmount, setNewAmount] = useState('');
   const [newReason, setNewReason] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
-  const [creditToWallet, setCreditToWallet] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
+  const [selectedAccountId, setSelectedAccountId] = useState('');
 
   const filteredDebts = debts.filter((d) => d.status === tab);
 
@@ -59,8 +58,8 @@ export default function Debts() {
       dueDate: newDueDate || null,
     });
 
-    // Credit/debit to wallet if enabled
-    if (creditToWallet && selectedAccountId) {
+    // Credit/debit to wallet if an actual account is selected
+    if (selectedAccountId) {
       const amt = Number(newAmount);
       if (newType === 'i_owe') {
         // Loan received → money comes IN to your wallet
@@ -88,7 +87,7 @@ export default function Debts() {
     }
 
     setNewPerson(''); setNewAmount(''); setNewReason(''); setNewDueDate('');
-    setCreditToWallet(false);
+    setSelectedAccountId('');
     setShowAddSheet(false);
   };
 
@@ -270,39 +269,39 @@ export default function Debts() {
           <div className="input-group"><label>Reason (optional)</label><input className="input" placeholder="What for?" value={newReason} onChange={(e) => setNewReason(e.target.value)} /></div>
           <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Due Date (optional)</label><DatePicker value={newDueDate} onChange={setNewDueDate} /></div>
 
-          {/* Credit/Debit to Wallet */}
+          {/* Always-visible Account Picker */}
           <div className="input-group">
-            <label className="qa-wallet-toggle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}>
-              <span>{newType === 'i_owe' ? 'Credit to a Wallet' : 'Debit from a Wallet'}</span>
-              <div style={{ position: 'relative' }}>
-                <input type="checkbox" checked={creditToWallet} onChange={(e) => setCreditToWallet(e.target.checked)} style={{ display: 'none' }} />
-                <div className={`toggle-switch ${creditToWallet ? 'on' : ''}`} style={{ width: '44px', height: '24px', background: creditToWallet ? 'var(--color-accent)' : 'var(--color-bg-input)', borderRadius: '12px', position: 'relative', transition: 'all 150ms ease', border: `1px solid ${creditToWallet ? 'var(--color-accent)' : 'var(--color-border)'}`, cursor: 'pointer' }}>
-                  <div style={{ width: '18px', height: '18px', background: creditToWallet ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)', borderRadius: '50%', position: 'absolute', top: '2px', left: creditToWallet ? '22px' : '2px', transition: 'all 150ms ease' }} />
-                </div>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>{newType === 'i_owe' ? 'Receive into Wallet' : 'Pay from Wallet'}</span>
             </label>
-          </div>
+            <div className="debt-account-picker">
+              {/* "None" Option */}
+              <button
+                type="button"
+                className={`debt-account-option ${!selectedAccountId ? 'active' : ''}`}
+                onClick={() => setSelectedAccountId('')}
+              >
+                <span className="debt-account-icon" style={{ background: 'var(--color-bg-input)', color: 'var(--color-text-muted)' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
+                <span>None</span>
+              </button>
 
-          {creditToWallet && (
-            <div className="input-group">
-              <label>{newType === 'i_owe' ? 'Receive money into' : 'Send money from'}</label>
-              <div className="debt-account-picker">
-                {accounts.map((acc) => (
-                  <button
-                    key={acc.id}
-                    type="button"
-                    className={`debt-account-option ${selectedAccountId === acc.id ? 'active' : ''}`}
-                    onClick={() => setSelectedAccountId(acc.id)}
-                  >
-                    <span className="debt-account-icon" style={{ background: `${acc.color}18`, color: acc.color }}>
-                      {getAccountIcon(acc, 18)}
-                    </span>
-                    <span>{acc.name}</span>
-                  </button>
-                ))}
-              </div>
+              {accounts.map((acc) => (
+                <button
+                  key={acc.id}
+                  type="button"
+                  className={`debt-account-option ${selectedAccountId === acc.id ? 'active' : ''}`}
+                  onClick={() => setSelectedAccountId(acc.id)}
+                >
+                  <span className="debt-account-icon" style={{ background: `${acc.color}18`, color: acc.color }}>
+                    {getAccountIcon(acc, 18)}
+                  </span>
+                  <span>{acc.name}</span>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           <button className={`btn submit-btn ${newType === 'owed_to_me' ? 'btn-income' : 'btn-expense'}`} onClick={handleAddDebt}>Add</button>
         </div>

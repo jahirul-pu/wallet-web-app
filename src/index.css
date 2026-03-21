@@ -715,3 +715,37 @@ input[type="number"] {
     --max-width: 520px;
   }
 }
+
+/* ── Toggle Switch (Reusable) ── */
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  background: var(--color-bg-input);
+  border-radius: 99px;
+  position: relative;
+  transition: all var(--transition-base);
+  cursor: pointer;
+  border: 1.5px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.toggle-switch.on {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.toggle-switch-thumb {
+  width: 18px;
+  height: 18px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  position: absolute;
+  top: 1.5px;
+  left: 2px;
+  transition: all var(--transition-base);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-switch.on .toggle-switch-thumb {
+  left: 21px;
+}
