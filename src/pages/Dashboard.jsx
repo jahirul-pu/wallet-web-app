@@ -90,21 +90,21 @@ export default function Dashboard() {
 
   return (
     <div className="page" id="dashboard-page">
-      <div className="dashboard-header">
-        <div>
-          <div className="dashboard-greeting">Good {getGreeting()} 👋</div>
-          <h1 className="page-title">Dashboard</h1>
-        </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate('/add')}
-          id="add-transaction-btn-desktop"
-        >
-          + Add
-        </button>
-      </div>
-
       <div className="dashboard-grid">
+        <div className="dashboard-header">
+          <div>
+            <div className="dashboard-greeting">Good {getGreeting()} 👋</div>
+            <h1 className="page-title">Dashboard</h1>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/add')}
+            id="add-transaction-btn-desktop"
+          >
+            + Add
+          </button>
+        </div>
+
         {/* Left Column - Main Vault Activity */}
         <div className="dashboard-col-main">
           <BalanceCard balance={balance} income={income} expense={expense} />
