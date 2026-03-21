@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 .env.*
+google-services.json
+firebase-*.json
+dataconnect/
 
 # Editor directories and files
 .vscode/*
