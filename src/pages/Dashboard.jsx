@@ -9,12 +9,9 @@ import { getMonthKey } from '../utils/dateFormat';
 import { formatAmount } from '../utils/currencies';
 import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
-import { Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { getCategoryInfo } from '../utils/categories';
 import './Dashboard.css';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -40,7 +37,7 @@ export default function Dashboard() {
     return { overdueDebts: overdue, totalOwedToMe: owedToMe, totalIOwe: iOwe };
   }, [debts]);
 
-  const { balance, income, expense, recentTxns, chartData } = useMemo(() => {
+    const { balance, income, expense, recentTxns } = useMemo(() => {
     const monthTxns = transactions.filter((t) => {
       const d = new Date(t.date);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -59,35 +56,7 @@ export default function Dashboard() {
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
 
-    // Category breakdown for expenses
-    const categoryTotals = {};
-    monthTxns.filter((t) => t.type === 'expense').forEach((t) => {
-      categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
-    });
-
-    const labels = [];
-    const data = [];
-    const colors = [];
-    Object.entries(categoryTotals)
-      .sort((a, b) => b[1] - a[1])
-      .forEach(([key, val]) => {
-        const cat = getCategoryInfo(key);
-        labels.push(cat.name);
-        data.push(val);
-        colors.push(cat.color);
-      });
-
-    const cd = {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: colors,
-        borderWidth: 0,
-        hoverOffset: 6,
-      }],
-    };
-
-    return { balance: bal, income: inc, expense: exp, recentTxns: recent, chartData: cd };
+    return { balance: bal, income: inc, expense: exp, recentTxns: recent };
   }, [transactions, currentMonth]);
 
   return (
@@ -227,43 +196,7 @@ export default function Dashboard() {
 
         {/* Right Column - Utility */}
         <div className="dashboard-col-side">
-          <MyCardsWidget />
-          <QuickSendWidget />
-
-          {/* Expense chart */}
-          <div className="dashboard-section">
-            <h2 className="dashboard-section-title">This Month</h2>
-            {chartData.datasets[0].data.length > 0 ? (
-              <div className="dashboard-chart-container card">
-                <Doughnut
-                  data={chartData}
-                  options={{
-                    responsive: true,
-                    cutout: '65%',
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                        labels: {
-                          padding: 12,
-                          usePointStyle: true,
-                          pointStyleWidth: 8,
-                          font: { size: 11, family: 'Inter' },
-                          color: 'var(--color-text-secondary)',
-                        },
-                      },
-                    },
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="empty-state card">
-                <div className="icon">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                </div>
-                <p>No expenses this month yet</p>
-              </div>
-            )}
-          </div>
+          {/* You can add smaller widgets here later */}
         </div>
       </div>
     </div>
@@ -275,62 +208,4 @@ function getGreeting() {
   if (h < 12) return 'Morning';
   if (h < 17) return 'Afternoon';
   return 'Evening';
-}
-
-function MyCardsWidget() {
-  return (
-    <div className="dashboard-section ui-widget">
-      <h2 className="dashboard-section-title">My Cards</h2>
-      <div className="credit-card-viz card">
-        <div className="card-viz-logo">PURRFECT</div>
-        <div className="card-viz-chip">
-          <div className="chip-inner"></div>
-        </div>
-        <div className="card-viz-number">•••• •••• •••• 4289</div>
-        <div className="card-viz-footer">
-          <div>
-            <div className="card-viz-label">Cardholder</div>
-            <div className="card-viz-value">ALEX CHEN</div>
-          </div>
-          <div>
-            <div className="card-viz-label">Expires</div>
-            <div className="card-viz-value">12/28</div>
-          </div>
-        </div>
-      </div>
-      <div className="card-toggles card">
-        <label className="card-toggle-row">
-          <span>Freeze Physical Card</span>
-          <input type="checkbox" className="toggle-checkbox" />
-          <div className="toggle-switch"></div>
-        </label>
-        <label className="card-toggle-row">
-          <span>Online Payments</span>
-          <input type="checkbox" className="toggle-checkbox" defaultChecked />
-          <div className="toggle-switch"></div>
-        </label>
-      </div>
-    </div>
-  );
-}
-
-function QuickSendWidget() {
-  return (
-    <div className="dashboard-section ui-widget">
-      <h2 className="dashboard-section-title">Quick Send</h2>
-      <div className="card quick-send-card">
-        <div className="quick-send-avatars">
-           <div className="qs-avatar add">+</div>
-           <div className="qs-avatar" style={{background:'#6366f1'}}>S</div>
-           <div className="qs-avatar" style={{background:'#ec4899'}}>M</div>
-           <div className="qs-avatar" style={{background:'#f59e0b'}}>E</div>
-        </div>
-        <div className="quick-send-input-group">
-           <span className="qs-currency">$</span>
-           <input type="number" placeholder="0.00" className="qs-input" />
-        </div>
-        <button className="btn btn-primary" style={{width: '100%', marginTop:'var(--space-4)'}}>Authorize Transfer</button>
-      </div>
-    </div>
-  );
 }
