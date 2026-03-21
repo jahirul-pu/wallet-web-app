@@ -1,3 +1,9 @@
+#dashboard-page {
+  max-width: 1000px;
+  min-height: 90vh;
+  margin: 0 auto;
+}
+
 .dashboard-header {
   display: flex;
   align-items: flex-start;
@@ -80,6 +86,17 @@
 
 .dashboard-section {
   margin-bottom: var(--space-6);
+}
+
+.dashboard-section .empty-state {
+  padding: var(--space-12) var(--space-8);
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--color-bg-glass);
+  border: 1px dashed var(--color-border);
 }
 
 .dashboard-section-header {
@@ -226,10 +243,14 @@
 /* --- DESKTOP GRID LAYOUT --- */
 @media (min-width: 1024px) {
   .dashboard-grid {
-    display: grid;
-    grid-template-columns: 1.8fr 1fr;
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-6);
-    align-items: start;
+  }
+  .dashboard-col-side {
+    display: none;
   }
   .dashboard-actions-mobile {
     display: none;
