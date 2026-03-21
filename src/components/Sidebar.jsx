@@ -117,25 +117,26 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-      <div className="sidebar-footer">
-        <div className="sidebar-footer-actions">
-          <NavLink
-            to="/settings"
-            title="Settings"
-            className={({ isActive }) => `sidebar-link icon-only ${isActive ? 'active' : ''}`}
-          >
-            <span className="sidebar-link-icon"><SettingsIcon /></span>
-          </NavLink>
-          {user ? (
-            <button className="sidebar-logout icon-only" onClick={() => logOut()} title="Secure Logout">
-              <LogOutIcon />
-            </button>
-          ) : (
-            <button className="sidebar-logout icon-only" onClick={() => navigate('/login')} title="Sign In">
-              <LogInIcon />
-            </button>
-          )}
-        </div>
+      <div className="sidebar-tray">
+        <div className="sidebar-tray-divider" />
+        <NavLink
+          to="/settings"
+          className={({ isActive }) => `sidebar-tray-item ${isActive ? 'active' : ''}`}
+        >
+          <span className="sidebar-tray-icon"><SettingsIcon /></span>
+          <span className="sidebar-tray-label">Settings</span>
+        </NavLink>
+        {user ? (
+          <button className="sidebar-tray-item tray-logout" onClick={() => logOut()}>
+            <span className="sidebar-tray-icon"><LogOutIcon /></span>
+            <span className="sidebar-tray-label">Sign Out</span>
+          </button>
+        ) : (
+          <button className="sidebar-tray-item tray-login" onClick={() => navigate('/login')}>
+            <span className="sidebar-tray-icon"><LogInIcon /></span>
+            <span className="sidebar-tray-label">Sign In</span>
+          </button>
+        )}
       </div>
     </aside>
   );
