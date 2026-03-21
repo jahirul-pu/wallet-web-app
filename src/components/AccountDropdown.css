@@ -1,0 +1,97 @@
+.account-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.account-dropdown-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background-color: var(--color-bg-input);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast);
+}
+
+.account-dropdown-btn:focus,
+.account-dropdown-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.account-dropdown-wrapper.disabled .account-dropdown-btn {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.account-dropdown-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+}
+
+.account-dropdown-label {
+  flex: 1;
+}
+
+.account-dropdown-chevron {
+  color: var(--color-text-secondary);
+  transition: transform var(--transition-fast);
+}
+
+.account-dropdown-chevron.open {
+  transform: rotate(180deg);
+}
+
+.account-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+  z-index: 50;
+  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.account-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--transition-fast);
+}
+
+.account-dropdown-item:hover,
+.account-dropdown-item:focus {
+  background-color: var(--color-bg-input);
+}
+
+.account-dropdown-item.active {
+  background-color: var(--color-bg-input);
+}
+
+.account-dropdown-check {
+  margin-left: auto;
+}

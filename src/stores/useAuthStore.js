@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { onAuthChange, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut } from '../services/auth';
+import { onAuthChange, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, updateUserName } from '../services/auth';
 import { fullSync, fullPush, unsubscribeAll } from '../services/sync';
 import { isConfigured } from '../services/firebase';
 
@@ -57,15 +57,35 @@ export const useAuthStore = create((set, get) => ({
   },
 
   // Sign up with email
-  emailSignUp: async (email, password) => {
+  emailSignUp: async (email, password, name) => {
     set({ error: null });
     try {
       await signUpWithEmail(email, password);
+      if (name) {
+        await updateUserName(name);
+        const currentUser = get().user;
+        if (currentUser) {
+          set({ user: { ...currentUser, displayName: name } });
+        }
+      }
     } catch (err) {
       set({ error: err.message });
     }
   },
 
+  // Update profile name manually
+  updateProfileName: async (name) => {
+    set({ error: null });
+    try {
+      await updateUserName(name);
+      const currentUser = get().user;
+      if (currentUser) {
+        set({ user: { ...currentUser, displayName: name } });
+      }
+    } catch (err) {
+      set({ error: err.message });
+    }
+  },
   // Sign out
   logOut: async () => {
     set({ error: null });

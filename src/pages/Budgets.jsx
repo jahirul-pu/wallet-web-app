@@ -6,6 +6,7 @@ import { getCategoryInfo, getExpenseCategories } from '../utils/categories';
 import { getMonthKey } from '../utils/dateFormat';
 import { formatAmount } from '../utils/currencies';
 import BottomSheet from '../components/BottomSheet';
+import '../components/CategoryPicker.css';
 import './Budgets.css';
 
 export default function Budgets() {
@@ -130,12 +131,25 @@ export default function Budgets() {
         <div className="sheet-form">
           <div className="input-group">
             <label>Category</label>
-            <select className="select" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>
-              <option value="">Select category</option>
+            <div className="category-picker" style={{ gap: '8px', marginTop: '8px' }}>
               {availableCategories.map(([key, cat]) => (
-                <option key={key} value={key}>{cat.icon} {cat.name}</option>
+                <button
+                  key={key}
+                  className={`category-picker-item ${newCategory === key ? 'active' : ''}`}
+                  onClick={() => setNewCategory(key)}
+                  style={{ '--cat-color': cat.color }}
+                  type="button"
+                >
+                  <span className="category-picker-icon">{cat.icon}</span>
+                  <span className="category-picker-name">{cat.name}</span>
+                </button>
               ))}
-            </select>
+              {availableCategories.length === 0 && (
+                <div style={{ color: 'var(--color-text-secondary)', padding: '10px 0', fontSize: '0.9em' }}>
+                  All categories have limits set!
+                </div>
+              )}
+            </div>
           </div>
           <div className="input-group">
             <label>Budget Amount</label>

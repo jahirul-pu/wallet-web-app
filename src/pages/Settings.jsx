@@ -43,6 +43,7 @@ export default function Settings() {
   const logOut = useAuthStore((s) => s.logOut);
   const pushAll = useAuthStore((s) => s.pushAll);
   const clearError = useAuthStore((s) => s.clearError);
+  const updateProfileName = useAuthStore((s) => s.updateProfileName);
 
   const [showCurrencySheet, setShowCurrencySheet] = useState(false);
   const [showAuthSheet, setShowAuthSheet] = useState(false);
@@ -54,6 +55,13 @@ export default function Settings() {
 
   const filteredCurrencies = searchCurrencies(currSearch);
   const currentCurrency = getCurrency(currency);
+
+  const handleEditName = () => {
+    const newName = window.prompt('Enter your name:', user?.displayName || '');
+    if (newName && newName.trim() !== '') {
+      updateProfileName(newName.trim());
+    }
+  };
 
   const handleExport = () => {
     exportData({ transactions, accounts, budgets, debts, settings: { theme, currency } });
@@ -146,7 +154,12 @@ export default function Settings() {
                   )}
                 </div>
                 <div>
-                  <div className="settings-item-title">{user.displayName || 'User'}</div>
+                  <div className="settings-item-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {user.displayName || 'User'}
+                    <button onClick={handleEditName} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primary)', padding: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                  </div>
                   <div className="settings-item-desc">{user.email}</div>
                 </div>
               </div>

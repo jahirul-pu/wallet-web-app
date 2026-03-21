@@ -41,7 +41,7 @@ export default function Signup() {
     e.preventDefault();
     if (!email || !password || !agreed) return;
     setLoading(true);
-    await emailSignUp(email, password);
+    await emailSignUp(email, password, fullName);
     setLoading(false);
     if (!useAuthStore.getState().error) {
       navigate('/');

@@ -26,7 +26,7 @@ export default function TopNav() {
         <div className="topnav-user">
           <div className="topnav-user-avatar">{userInitial}</div>
           <div className="topnav-user-details">
-            <span className="topnav-user-name">{user?.displayName || 'Guest User'}</span>
+            <span className="topnav-user-name">{user?.displayName || user?.email || 'Guest User'}</span>
             <span className="topnav-user-status">Lumina Premium</span>
           </div>
         </div>

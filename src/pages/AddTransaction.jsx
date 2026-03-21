@@ -4,6 +4,7 @@ import { useTransactionStore } from '../stores/useTransactionStore';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import CategoryPicker from '../components/CategoryPicker';
+import AccountDropdown from '../components/AccountDropdown';
 import { toInputDate } from '../utils/dateFormat';
 import './AddTransaction.css';
 
@@ -95,40 +96,24 @@ export default function AddTransaction() {
         </div>
 
         {/* Account */}
-        <div className="input-group">
+        <div className="input-group" style={{ position: 'relative', zIndex: 10 }}>
           <label>{type === 'transfer' ? 'From Account' : 'Account'}</label>
-          <select
-            className="select"
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            id="account-select"
-          >
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.icon} {a.name}
-              </option>
-            ))}
-          </select>
+          <AccountDropdown 
+            accounts={accounts} 
+            value={accountId} 
+            onChange={setAccountId} 
+          />
         </div>
 
         {/* To account (transfer only) */}
         {type === 'transfer' && (
-          <div className="input-group">
+          <div className="input-group" style={{ position: 'relative', zIndex: 9 }}>
             <label>To Account</label>
-            <select
-              className="select"
-              value={toAccountId}
-              onChange={(e) => setToAccountId(e.target.value)}
-              id="to-account-select"
-            >
-              {accounts
-                .filter((a) => a.id !== accountId)
-                .map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.icon} {a.name}
-                  </option>
-                ))}
-            </select>
+            <AccountDropdown 
+              accounts={accounts.filter((a) => a.id !== accountId)} 
+              value={toAccountId} 
+              onChange={setToAccountId} 
+            />
           </div>
         )}
 

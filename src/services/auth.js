@@ -3,6 +3,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updateProfile,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -62,4 +63,12 @@ export const onAuthChange = (callback) => {
 export const getCurrentUser = () => {
   if (!isConfigured || !auth) return null;
   return auth.currentUser;
+};
+
+/**
+ * Update user profile name
+ */
+export const updateUserName = async (displayName) => {
+  if (!isConfigured || !auth.currentUser) return;
+  return updateProfile(auth.currentUser, { displayName });
 };
