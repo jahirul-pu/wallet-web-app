@@ -12,9 +12,38 @@
     width: 260px;
     flex-shrink: 0;
     flex-direction: column;
-    background: #0F172A; /* Deep Slate Sidebar strictly per prompt */
-    border-right: 1px solid rgba(255,255,255,0.05); /* very subtle on dark */
-    color: #F7F9FB; /* Text forced to light for contrast */
+    background: linear-gradient(
+      180deg,
+      #131c31 0%,
+      #0F172A 40%,
+      #0a1120 100%
+    );
+    border-right: 1px solid rgba(255,255,255,0.04);
+    color: #F7F9FB;
+    position: relative;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+
+  .app-sidebar.collapsed {
+    width: 72px;
+  }
+
+  /* Subtle inner highlight edge */
+  .app-sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      rgba(111, 251, 190, 0.06) 0%,
+      rgba(111, 251, 190, 0.02) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
   }
 
   .app-main {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import logoImg from '../assets/logo.png';
@@ -70,6 +71,14 @@ const LogInIcon = () => (
   </svg>
 );
 
+const CollapseIcon = ({ collapsed }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}>
+    <polyline points="11 17 6 12 11 7" />
+    <polyline points="18 17 13 12 18 7" />
+  </svg>
+);
+
 const NAV_GROUPS = [
   {
     items: [
@@ -94,9 +103,20 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const logOut = useAuthStore((s) => s.logOut);
   const user = useAuthStore((s) => s.user);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
+  });
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('sidebar-collapsed', String(next)); } catch {}
+      return next;
+    });
+  };
 
   return (
-    <aside className="app-sidebar">
+    <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-brand">
         <img src={logoImg} alt="Purrfect Finance" className="sidebar-logo" />
       </div>
@@ -109,6 +129,7 @@ export default function Sidebar() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                data-tooltip={item.label}
               >
                 <span className="sidebar-link-icon">{item.icon}</span>
                 <span className="sidebar-link-label">{item.label}</span>
@@ -119,20 +140,24 @@ export default function Sidebar() {
       </nav>
       <div className="sidebar-tray">
         <div className="sidebar-tray-divider" />
+        <button className="sidebar-collapse-btn" onClick={toggleCollapse} data-tooltip={collapsed ? 'Expand' : 'Collapse'}>
+          <CollapseIcon collapsed={collapsed} />
+        </button>
         <NavLink
           to="/settings"
           className={({ isActive }) => `sidebar-tray-item ${isActive ? 'active' : ''}`}
+          data-tooltip="Settings"
         >
           <span className="sidebar-tray-icon"><SettingsIcon /></span>
           <span className="sidebar-tray-label">Settings</span>
         </NavLink>
         {user ? (
-          <button className="sidebar-tray-item tray-logout" onClick={() => logOut()}>
+          <button className="sidebar-tray-item tray-logout" onClick={() => logOut()} data-tooltip="Sign Out">
             <span className="sidebar-tray-icon"><LogOutIcon /></span>
             <span className="sidebar-tray-label">Sign Out</span>
           </button>
         ) : (
-          <button className="sidebar-tray-item tray-login" onClick={() => navigate('/login')}>
+          <button className="sidebar-tray-item tray-login" onClick={() => navigate('/login')} data-tooltip="Sign In">
             <span className="sidebar-tray-icon"><LogInIcon /></span>
             <span className="sidebar-tray-label">Sign In</span>
           </button>
