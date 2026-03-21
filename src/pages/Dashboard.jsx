@@ -9,6 +9,7 @@ import { getMonthKey } from '../utils/dateFormat';
 import { formatAmount } from '../utils/currencies';
 import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
+import { getCategoryInfo } from '../utils/categories';
 import { toInputDate } from '../utils/dateFormat';
 import './Dashboard.css';
 
@@ -87,6 +88,46 @@ export default function Dashboard() {
 
     return { balance: bal, income: inc, expense: exp, recentTxns: recent };
   }, [transactions, currentMonth]);
+
+  // Analytics computations
+  const analytics = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMo = now.getMonth();
+    const monthExpenses = transactions.filter((t) => {
+      const d = new Date(t.date);
+      return t.type === 'expense' && d.getFullYear() === currentYear && d.getMonth() === currentMo;
+    });
+    const catMap = {};
+    monthExpenses.forEach((t) => {
+      const cat = t.category || 'other_expense';
+      catMap[cat] = (catMap[cat] || 0) + t.amount;
+    });
+    const totalExpenseAmt = Object.values(catMap).reduce((s, v) => s + v, 0);
+    const categoryBreakdown = Object.entries(catMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([key, amount]) => {
+        const info = getCategoryInfo(key);
+        return { key, name: info.name, amount, percent: totalExpenseAmt > 0 ? (amount / totalExpenseAmt) * 100 : 0 };
+      });
+    const dayOfMonth = now.getDate();
+    const dailyAvg = dayOfMonth > 0 ? totalExpenseAmt / dayOfMonth : 0;
+    const savingsRate = income > 0 ? Math.round(((income - expense) / income) * 100) : 0;
+    const last7 = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayLabel = d.toLocaleDateString('en', { weekday: 'short' }).substring(0, 2);
+      const dayTotal = transactions
+        .filter((t) => t.type === 'expense' && t.date === dateStr)
+        .reduce((s, t) => s + t.amount, 0);
+      last7.push({ label: dayLabel, amount: dayTotal });
+    }
+    const maxDay = Math.max(...last7.map((d) => d.amount), 1);
+    return { categoryBreakdown, dailyAvg, savingsRate, last7, maxDay, totalExpenseAmt };
+  }, [transactions, income, expense]);
 
   return (
     <div className="page" id="dashboard-page">
@@ -278,6 +319,69 @@ export default function Dashboard() {
               </span>
               <span>Transfer</span>
             </button>
+          </div>
+
+          {/* Analytics Section */}
+          <div className="dashboard-section" style={{ animationDelay: '0.35s' }}>
+            <div className="dashboard-section-header">
+              <h2 className="dashboard-section-title">Analytics</h2>
+              <span className="analytics-period-badge">This Month</span>
+            </div>
+            <div className="analytics-grid">
+              <div className="analytics-stat-card card">
+                <div className="analytics-stat-label">Savings Rate</div>
+                <div className={`analytics-stat-value ${analytics.savingsRate >= 0 ? 'positive' : 'negative'}`}>
+                  {analytics.savingsRate}%
+                </div>
+                <div className="analytics-stat-bar">
+                  <div
+                    className={`analytics-stat-bar-fill ${analytics.savingsRate >= 30 ? 'good' : analytics.savingsRate >= 0 ? 'okay' : 'bad'}`}
+                    style={{ width: `${Math.min(Math.abs(analytics.savingsRate), 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div className="analytics-stat-card card">
+                <div className="analytics-stat-label">Daily Average</div>
+                <div className="analytics-stat-value">
+                  {formatAmount(analytics.dailyAvg, currency)}
+                </div>
+                <div className="analytics-stat-sublabel">spent per day</div>
+              </div>
+            </div>
+            <div className="analytics-trend card">
+              <div className="analytics-trend-title">7-Day Spending</div>
+              <div className="analytics-sparkline">
+                {analytics.last7.map((day, i) => (
+                  <div key={i} className="sparkline-bar-group">
+                    <div className="sparkline-bar-track">
+                      <div
+                        className="sparkline-bar-fill"
+                        style={{ height: `${Math.max((day.amount / analytics.maxDay) * 100, 4)}%` }}
+                        title={formatAmount(day.amount, currency)}
+                      />
+                    </div>
+                    <span className="sparkline-label">{day.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {analytics.categoryBreakdown.length > 0 && (
+              <div className="analytics-categories card">
+                <div className="analytics-trend-title">Top Spending Categories</div>
+                {analytics.categoryBreakdown.map((cat) => (
+                  <div key={cat.key} className="analytics-cat-row">
+                    <div className="analytics-cat-info">
+                      <span className="analytics-cat-name">{cat.name}</span>
+                      <span className="analytics-cat-amount">{formatAmount(cat.amount, currency)}</span>
+                    </div>
+                    <div className="analytics-cat-bar">
+                      <div className="analytics-cat-bar-fill" style={{ width: `${cat.percent}%` }} />
+                    </div>
+                    <span className="analytics-cat-percent">{Math.round(cat.percent)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
