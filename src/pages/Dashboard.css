@@ -374,6 +374,200 @@
   letter-spacing: 0.03em;
 }
 
+.analytics-insights-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.analytics-insight-card {
+  padding: var(--space-4) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.insight-card-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.insight-card-val {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.insight-card-sub {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* Trend Chart */
+.analytics-trend-chart {
+  padding: var(--space-4) !important;
+  margin-bottom: var(--space-4);
+}
+
+.analytics-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin-bottom: var(--space-3);
+  color: var(--color-text-primary);
+}
+
+.analytics-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  margin-right: 4px;
+}
+
+.legend-dot.income { background: #10b981; }
+.legend-dot.expense { background: #f43f5e; }
+
+.analytics-line-wrapper {
+  position: relative;
+  height: 100px;
+}
+
+.analytics-svg-line {
+  width: 100%;
+  height: 80px;
+  display: block;
+}
+
+.analytics-x-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+/* Spending Breakdown / Donut */
+.analytics-breakdown {
+  padding: var(--space-4) !important;
+}
+
+.analytics-pie-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.analytics-pie-container {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+
+.analytics-donut {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.analytics-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.donut-total {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.donut-lbl {
+  font-size: 0.55rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.analytics-pie-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pie-legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.pie-legend-name {
+  flex: 1;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pie-legend-pct {
+  font-weight: 800;
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+}
+
+@media (max-width: 480px) {
+  .analytics-insights-row {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-pie-row {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
 @keyframes drawDonut {
   0% { stroke-dasharray: 0, 100; stroke-dashoffset: 25; opacity: 0; }
   20% { opacity: 1; }
