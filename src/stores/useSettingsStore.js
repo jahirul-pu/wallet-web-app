@@ -9,6 +9,7 @@ export const useSettingsStore = create(
       currency: DEFAULT_CURRENCY,
       pinEnabled: false,
       pin: null,
+      hideBalances: false,
 
       toggleTheme: () => {
         set((state) => {
@@ -28,6 +29,8 @@ export const useSettingsStore = create(
       setPin: (pin) => set({ pin, pinEnabled: !!pin }),
 
       clearPin: () => set({ pin: null, pinEnabled: false }),
+
+      toggleHideBalances: () => set((state) => ({ hideBalances: !state.hideBalances })),
 
       resetSettings: () => {
         document.documentElement.setAttribute('data-theme', 'dark');

@@ -4,6 +4,42 @@
   position: relative;
 }
 
+/* Top row with label + eye toggle */
+.accounts-total-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.balance-toggle-btn {
+  position: absolute;
+  right: var(--space-3);
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.balance-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.balance-toggle-btn:active {
+  transform: scale(0.9);
+}
+
 .accounts-total-label {
   font-size: var(--text-sm);
   opacity: 0.85;
@@ -114,7 +150,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  overflow: visible;
+  position: relative;
   transition: transform var(--transition-short), box-shadow var(--transition-short), border-color var(--transition-short), opacity var(--transition-short), filter var(--transition-short), background var(--transition-short);
+}
+
+.account-card.menu-open {
+  z-index: 50;
 }
 
 /* Visual Hierarchy: Active Wallets */
@@ -240,6 +282,204 @@
 .btn-icon-mini.delete:hover:not(:disabled) {
   background: var(--color-danger-light);
   color: var(--color-danger);
+}
+
+/* 3-dot More Button */
+.wallet-more-btn {
+  position: relative;
+}
+
+.wallet-more-btn:hover {
+  background: var(--color-bg-input) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Right side needs relative for the context menu */
+.account-card-right {
+  position: relative;
+}
+
+/* Context Menu */
+.wallet-context-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 160px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  padding: 4px;
+  animation: contextMenuIn 0.15s ease-out;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .wallet-context-menu {
+  background: var(--color-bg-elevated, var(--color-bg-card));
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes contextMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.wallet-context-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.wallet-context-item:hover {
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+}
+
+.wallet-context-item svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.wallet-context-item:hover svg {
+  opacity: 1;
+}
+
+/* Danger item (Delete) */
+.wallet-context-item.danger {
+  color: var(--color-danger, #ef4444);
+}
+
+.wallet-context-item.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger, #ef4444);
+}
+
+.wallet-context-item.danger svg {
+  opacity: 0.8;
+}
+
+.wallet-context-item.danger:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.wallet-context-item.danger:disabled:hover {
+  background: none;
+}
+
+/* Divider */
+.wallet-context-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 3px 6px;
+  opacity: 0.6;
+}
+
+/* Archived wallets section */
+.archived-wallets-section {
+  margin-bottom: var(--space-6);
+}
+
+.archived-toggle {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.archived-toggle:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.account-card.inactive-wallet .wallet-context-item:not(.danger) {
+  color: var(--color-text-muted);
+}
+
+.account-card.inactive-wallet .wallet-context-item:not(.danger):hover {
+  color: var(--color-text-secondary);
+}
+
+/* Mini Activity Preview */
+.wallet-activity-preview {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wallet-activity-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.wallet-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  padding: 3px 0;
+}
+
+.wallet-activity-dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wallet-activity-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.wallet-activity-amount {
+  font-weight: 600;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.wallet-activity-amount.income {
+  color: var(--color-income);
+}
+
+.wallet-activity-amount.expense {
+  color: var(--color-expense);
+}
+
+.wallet-activity-amount.transfer {
+  color: #818cf8;
 }
 
 /* Quick actions row */

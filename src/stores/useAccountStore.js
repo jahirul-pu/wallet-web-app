@@ -45,6 +45,22 @@ export const useAccountStore = create(
         }));
       },
 
+      archiveAccount: (id) => {
+        set((state) => ({
+          accounts: state.accounts.map((a) =>
+            a.id === id ? { ...a, archived: true } : a
+          ),
+        }));
+      },
+
+      unarchiveAccount: (id) => {
+        set((state) => ({
+          accounts: state.accounts.map((a) =>
+            a.id === id ? { ...a, archived: false } : a
+          ),
+        }));
+      },
+
       adjustBalance: (id, amount, type) => {
         set((state) => ({
           accounts: state.accounts.map((a) => {

@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { formatAmount } from '../utils/currencies';
 import { renderAccountIcon } from '../utils/accountIcons';
+import { getCategoryInfo } from '../utils/categories';
 import BottomSheet from '../components/BottomSheet';
 import AccountDropdown from '../components/AccountDropdown';
 import CalculatorInput from '../components/CalculatorInput';
@@ -67,17 +68,41 @@ export default function Accounts() {
   const addAccount = useAccountStore((s) => s.addAccount);
   const updateAccount = useAccountStore((s) => s.updateAccount);
   const deleteAccount = useAccountStore((s) => s.deleteAccount);
+  const archiveAccount = useAccountStore((s) => s.archiveAccount);
+  const unarchiveAccount = useAccountStore((s) => s.unarchiveAccount);
   const getTotalBalance = useAccountStore((s) => s.getTotalBalance);
   const transfer = useAccountStore((s) => s.transfer);
   const reorderAccounts = useAccountStore((s) => s.reorderAccounts);
   const currency = useSettingsStore((s) => s.currency);
+  const hideBalances = useSettingsStore((s) => s.hideBalances);
+  const toggleHideBalances = useSettingsStore((s) => s.toggleHideBalances);
   const transactions = useTransactionStore((s) => s.transactions);
   const navigate = useNavigate();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showTransferSheet, setShowTransferSheet] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [contextMenuId, setContextMenuId] = useState(null);
+  const contextMenuRef = useRef(null);
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target)) {
+        setContextMenuId(null);
+      }
+    };
+    if (contextMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [contextMenuId]);
   
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('💵');
@@ -211,21 +236,57 @@ export default function Accounts() {
   const positiveAccounts = accounts.filter(a => a.balance > 0).sort((a, b) => b.balance - a.balance);
   const totalPositive = positiveAccounts.reduce((sum, a) => sum + a.balance, 0);
 
+  /* Recent transactions per wallet (last 2) */
+  const recentByWallet = useMemo(() => {
+    const map = {};
+    accounts.forEach((acc) => {
+      const accTxns = transactions
+        .filter((t) => t.accountId === acc.id || t.toAccountId === acc.id)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 2);
+      map[acc.id] = accTxns;
+    });
+    return map;
+  }, [transactions, accounts]);
+
+  const maskedAmount = '•••••';
+
   return (
     <div className="page" id="accounts-page">
       <h1 className="page-title">Wallets</h1>
 
       {/* Net Worth Card — Enhanced */}
       <div className="accounts-total gradient-card">
-        <div className="accounts-total-label">Net Worth</div>
+        <div className="accounts-total-top-row">
+          <div className="accounts-total-label">Net Worth</div>
+          <button
+            className="balance-toggle-btn"
+            onClick={toggleHideBalances}
+            title={hideBalances ? 'Show balances' : 'Hide balances'}
+          >
+            {hideBalances ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        </div>
         <div className="accounts-total-amount" style={{ position: 'relative', zIndex: 1 }}>
-          {formatAmount(getTotalBalance(), currency)}
+          {hideBalances ? maskedAmount : formatAmount(getTotalBalance(), currency)}
         </div>
 
         {/* Monthly change */}
         <div className="accounts-monthly-change" style={{ position: 'relative', zIndex: 1 }}>
           <span className={`monthly-change-badge ${isPositive ? 'positive' : 'negative'}`}>
-            {isPositive ? '+' : ''}{formatAmount(monthlyChange, currency)} this month
+            {hideBalances ? maskedAmount : `${isPositive ? '+' : ''}${formatAmount(monthlyChange, currency)}`} this month
             <span className="monthly-change-arrow">{isPositive ? '↑' : '↓'}</span>
           </span>
         </div>
@@ -280,12 +341,15 @@ export default function Accounts() {
         </div>
       )}
 
-      {/* Account list — split active & inactive */}
+      {/* Account list — split active, inactive, archived */}
       {(() => {
         const activeAccounts = [];
         const inactiveAccounts = [];
+        const archivedAccounts = [];
         accounts.forEach((acc, index) => {
-          if (acc.balance === 0) {
+          if (acc.archived) {
+            archivedAccounts.push({ acc, index });
+          } else if (acc.balance === 0) {
             inactiveAccounts.push({ acc, index });
           } else {
             activeAccounts.push({ acc, index });
@@ -296,7 +360,7 @@ export default function Accounts() {
           const stats = walletStats[acc.id] || { count: 0, lastUsedLabel: 'Never', activity: 'inactive' };
           const isZero = acc.balance === 0;
           return (
-            <div key={acc.id} className={`account-card card ${isPrimary ? 'primary-wallet' : ''} ${isZero ? 'inactive-wallet' : 'active-wallet'}`}>
+            <div key={acc.id} className={`account-card card ${isPrimary ? 'primary-wallet' : ''} ${isZero ? 'inactive-wallet' : 'active-wallet'} ${contextMenuId === acc.id ? 'menu-open' : ''}`}>
               <div className="account-card-top">
                 <div className="account-card-left" onClick={() => openEditSheet(acc)} style={{ cursor: 'pointer', flex: 1 }}>
                   <div className="account-card-icon-wrap">
@@ -324,7 +388,7 @@ export default function Accounts() {
                       className="account-card-balance"
                       style={{ color: acc.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
                     >
-                      {formatAmount(acc.balance, currency)}
+                      {hideBalances ? maskedAmount : formatAmount(acc.balance, currency)}
                     </div>
                     <div className="wallet-meta">
                       <span className="wallet-meta-item">
@@ -339,7 +403,7 @@ export default function Accounts() {
                   </div>
                 </div>
 
-                <div className="account-card-right">
+                <div className="account-card-right" ref={contextMenuId === acc.id ? contextMenuRef : null}>
                   <div className="account-card-reorder">
                     <button 
                       className="btn-icon-mini" 
@@ -357,16 +421,98 @@ export default function Accounts() {
                     </button>
                   </div>
                   <button
-                    className="btn-icon-mini delete"
-                    onClick={() => {
-                      if (window.confirm('Delete this wallet?')) deleteAccount(acc.id);
+                    className="btn-icon-mini wallet-more-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setContextMenuId(contextMenuId === acc.id ? null : acc.id);
                     }}
-                    disabled={accounts.length === 1}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="5" r="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <circle cx="12" cy="19" r="2" />
+                    </svg>
                   </button>
+
+                  {/* Context Menu */}
+                  {contextMenuId === acc.id && (
+                    <div className="wallet-context-menu">
+                      <button
+                        className="wallet-context-item"
+                        onClick={() => {
+                          setContextMenuId(null);
+                          openEditSheet(acc);
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Edit
+                      </button>
+                      <button
+                        className="wallet-context-item"
+                        onClick={() => {
+                          setContextMenuId(null);
+                          if (acc.archived) {
+                            unarchiveAccount(acc.id);
+                          } else {
+                            archiveAccount(acc.id);
+                          }
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="21 8 21 21 3 21 3 8" />
+                          <rect x="1" y="3" width="22" height="5" />
+                          <line x1="10" y1="12" x2="14" y2="12" />
+                        </svg>
+                        {acc.archived ? 'Unarchive' : 'Archive'}
+                      </button>
+                      <div className="wallet-context-divider" />
+                      <button
+                        className="wallet-context-item danger"
+                        onClick={() => {
+                          setContextMenuId(null);
+                          if (window.confirm('Are you sure you want to permanently delete this wallet? This action cannot be undone.')) {
+                            deleteAccount(acc.id);
+                          }
+                        }}
+                        disabled={accounts.filter(a => !a.archived).length === 1 && !acc.archived}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Mini Activity Preview */}
+              {recentByWallet[acc.id] && recentByWallet[acc.id].length > 0 && (
+                <div className="wallet-activity-preview">
+                  <div className="wallet-activity-label">Recent</div>
+                  {recentByWallet[acc.id].map((txn) => {
+                    const catInfo = getCategoryInfo(txn.category);
+                    const isIncome = txn.type === 'income';
+                    const isTransfer = txn.type === 'transfer';
+                    return (
+                      <div key={txn.id} className="wallet-activity-row">
+                        <span className="wallet-activity-dot-indicator" style={{ background: isTransfer ? '#818cf8' : isIncome ? 'var(--color-income)' : 'var(--color-expense)' }} />
+                        <span className="wallet-activity-name">
+                          {isTransfer ? 'Transfer' : catInfo.name}
+                          {txn.note ? ` — ${txn.note}` : ''}
+                        </span>
+                        <span className={`wallet-activity-amount ${isIncome ? 'income' : isTransfer ? 'transfer' : 'expense'}`}>
+                          {hideBalances ? '•••' : `${isIncome ? '+' : isTransfer ? '' : '-'}${formatAmount(txn.amount, currency)}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="wallet-quick-actions">
                 <button
@@ -428,6 +574,37 @@ export default function Accounts() {
                 {showInactive && (
                   <div className="accounts-list" style={{ marginTop: 'var(--space-3)' }}>
                     {inactiveAccounts.map((item) => renderWalletCard(item, false))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Archived wallets — collapsible */}
+            {archivedAccounts.length > 0 && (
+              <div className="archived-wallets-section">
+                <button
+                  className="inactive-wallets-toggle archived-toggle"
+                  onClick={() => setShowArchived(!showArchived)}
+                >
+                  <span className="inactive-toggle-left">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="21 8 21 21 3 21 3 8" />
+                      <rect x="1" y="3" width="22" height="5" />
+                      <line x1="10" y1="12" x2="14" y2="12" />
+                    </svg>
+                    Archived Wallets ({archivedAccounts.length})
+                  </span>
+                  <svg
+                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    style={{ transition: 'transform 0.2s', transform: showArchived ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                {showArchived && (
+                  <div className="accounts-list" style={{ marginTop: 'var(--space-3)' }}>
+                    {archivedAccounts.map((item) => renderWalletCard(item, false))}
                   </div>
                 )}
               </div>
