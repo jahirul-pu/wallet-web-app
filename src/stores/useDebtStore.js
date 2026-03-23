@@ -110,9 +110,24 @@ export const useDebtStore = create(
 
       markAsPaid: (id) => {
         set((state) => ({
-          debts: state.debts.map((d) =>
-            d.id === id ? { ...d, status: 'paid', paidAmount: d.totalAmount } : d
-          ),
+          debts: state.debts.map((d) => {
+            if (d.id !== id) return d;
+            const remaining = d.totalAmount - d.paidAmount;
+            if (remaining <= 0) return { ...d, status: 'paid', paidAmount: d.totalAmount };
+            
+            const payment = {
+              id: generateId(),
+              amount: remaining,
+              note: 'Settled',
+              date: new Date().toISOString().split('T')[0],
+            };
+            return {
+              ...d,
+              status: 'paid',
+              paidAmount: d.totalAmount,
+              payments: [...(d.payments || []), payment]
+            };
+          }),
         }));
       },
 
