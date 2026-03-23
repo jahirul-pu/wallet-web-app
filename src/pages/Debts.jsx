@@ -45,6 +45,11 @@ export default function Debts() {
   const [newReason, setNewReason] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [remindOneDayBefore, setRemindOneDayBefore] = useState(true);
+  const [remindOnDueDate, setRemindOnDueDate] = useState(true);
+
+  const getActiveReminders = useDebtStore((s) => s.getActiveReminders);
+  const activeReminders = useMemo(() => getActiveReminders(), [debts, getActiveReminders]);
 
   const filteredDebts = debts.filter((d) => d.status === tab);
 
@@ -56,6 +61,7 @@ export default function Debts() {
       totalAmount: newAmount,
       reason: newReason,
       dueDate: newDueDate || null,
+      reminders: { oneDayBefore: remindOneDayBefore, onDueDate: remindOnDueDate },
     });
 
     // Credit/debit to wallet if an actual account is selected
@@ -142,6 +148,33 @@ export default function Debts() {
         </div>
       </div>
 
+      {/* Active Alerts */}
+      {tab === 'active' && activeReminders.length > 0 && (
+        <div className="debt-reminders-alerts">
+          <div className="reminders-alert-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Upcoming Reminders
+          </div>
+          <div className="reminders-alert-list">
+            {activeReminders.map(d => {
+              const today = new Date().toISOString().split('T')[0];
+              const isToday = d.dueDate === today;
+              return (
+                <div key={d.id} className="reminders-alert-item" onClick={() => {
+                  const el = document.getElementById(`debt-${d.id}`);
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  el?.classList.add('highlight-flash');
+                  setTimeout(() => el?.classList.remove('highlight-flash'), 2000);
+                }}>
+                  <div className="alert-item-time">{isToday ? 'TODAY' : 'TOMORROW'}</div>
+                  <div className="alert-item-text">{d.type === 'i_owe' ? 'Pay' : 'Collect from'} <strong>{d.personName}</strong>: {formatAmount(d.totalAmount - d.paidAmount, currency)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="debt-tabs">
         <button className={`debt-tab ${tab === 'active' ? 'active' : ''}`} onClick={() => setTab('active')}>
@@ -162,7 +195,7 @@ export default function Debts() {
             const days = daysUntil(d.dueDate);
 
             return (
-              <div key={d.id} className={`debt-card card ${overdue ? 'overdue' : ''}`}>
+              <div key={d.id} id={`debt-${d.id}`} className={`debt-card card ${overdue ? 'overdue' : ''}`}>
                 <div className="debt-card-header">
                   <div>
                     <div className="debt-card-person">{d.personName}</div>
@@ -181,43 +214,115 @@ export default function Debts() {
 
                 {d.reason && <div className="debt-card-reason">{d.reason}</div>}
 
-                <div className="progress-bar">
-                  <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                <div className="debt-progress-section">
+                  <div className="debt-progress-labels">
+                    <span className="debt-progress-paid">
+                      {formatAmount(d.paidAmount, currency)} <span className="debt-progress-of">/ {formatAmount(d.totalAmount, currency)}</span>
+                    </span>
+                    <span className={`debt-progress-pct ${pct >= 100 ? 'complete' : pct >= 75 ? 'high' : ''}`}>
+                      {Math.round(pct)}% paid
+                    </span>
+                  </div>
+                  <div className="progress-bar">
+                    <div
+                      className={`progress-bar-fill ${d.type === 'i_owe' ? 'payable' : 'receivable'}`}
+                      style={{ width: `${Math.min(pct, 100)}%` }}
+                    />
+                  </div>
+                  {remaining > 0 && (
+                    <div className="debt-progress-remaining">
+                      Remaining: <strong>{formatAmount(remaining, currency)}</strong>
+                    </div>
+                  )}
                 </div>
 
                 <div className="debt-card-meta">
-                  {d.dueDate && (
-                    <span className={overdue ? 'overdue-text' : ''}>
-                      {overdue ? <><svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> Overdue by {Math.abs(days)} days</> : `Due: ${formatDate(d.dueDate)}`}
+                  {d.dueDate && d.status === 'active' && (() => {
+                    let urgencyClass = 'urgency-neutral';
+                    let text = `Due in ${days} day${days !== 1 ? 's' : ''}`;
+                    
+                    if (days < 0) {
+                      urgencyClass = 'urgency-critical';
+                      text = `🚨 Overdue by ${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''}`;
+                    } else if (days <= 2) {
+                      urgencyClass = 'urgency-warning';
+                      text = days === 0 ? '⚠ Due Today!' : `⚠ Due in ${days} day${days !== 1 ? 's' : ''}`;
+                    }
+
+                    return (
+                      <span className={`urgency-badge ${urgencyClass}`}>
+                        {text}
+                      </span>
+                    );
+                  })()}
+                  {d.dueDate && d.status === 'paid' && (
+                    <span className="urgency-settled">
+                      ✅ Settled
                     </span>
                   )}
                   {d.payments.length > 0 && (
                     <span>{d.payments.length} payment{d.payments.length > 1 ? 's' : ''}</span>
                   )}
+                  {d.status === 'active' && d.dueDate && (
+                    <div className="debt-card-reminders-tags">
+                      {d.reminders?.oneDayBefore && <span className="reminder-tag">1d before</span>}
+                      {d.reminders?.onDueDate && <span className="reminder-tag">on due date</span>}
+                      {!d.reminders?.oneDayBefore && !d.reminders?.onDueDate && <span className="reminder-tag muted">reminders off</span>}
+                    </div>
+                  )}
                 </div>
 
                 {d.payments.length > 0 && (
-                  <div className="debt-payments-breakdown" style={{ marginTop: 'var(--space-3)', background: 'var(--color-bg-input)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--color-text-secondary)', marginBottom: '8px', letterSpacing: '1px' }}>Payment History</div>
-                    {d.payments.map((p, index) => (
-                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: index === d.payments.length - 1 ? 0 : '8px', fontSize: 'var(--text-sm)', borderBottom: index === d.payments.length - 1 ? 'none' : '1px solid var(--color-border)', paddingBottom: index === d.payments.length - 1 ? 0 : '8px' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ color: 'var(--color-text-primary)' }}>{formatDate(p.date)}</div>
-                          {p.note && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>{p.note}</div>}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ fontWeight: '500' }}>{formatAmount(p.amount, currency)}</div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button style={{ background: 'none', border: 'none', color: 'var(--color-primary)', padding: '4px', cursor: 'pointer', display: 'flex' }} onClick={() => openEditPaySheet(d, p)}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                            </button>
-                            <button style={{ background: 'none', border: 'none', color: 'var(--color-danger)', padding: '4px', cursor: 'pointer', display: 'flex' }} onClick={() => { if(window.confirm('Delete this payment record?')) deletePayment(d.id, p.id); }}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                            </button>
+                  <div className="debt-timeline-container">
+                    <div className="debt-timeline-header">Payment Timeline</div>
+                    <div className="debt-timeline">
+                      {/* Evolution of payments */}
+                      {(() => {
+                        let currentRunningBalance = d.totalAmount;
+                        const timelineItems = [];
+
+                        // 1. Initial State
+                        timelineItems.push(
+                          <div key="start" className="timeline-item start">
+                            <div className="timeline-dot"></div>
+                            <div className="timeline-content">
+                              <div className="timeline-row">
+                                <span className="timeline-label">Initial Amount</span>
+                                <span className="timeline-value">{formatAmount(d.totalAmount, currency)}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))}
+                        );
+
+                        // 2. Payments
+                        d.payments
+                          .sort((a, b) => new Date(a.date) - new Date(b.date))
+                          .forEach((p) => {
+                            currentRunningBalance -= p.amount;
+                            timelineItems.push(
+                              <div key={p.id} className="timeline-item payment">
+                                <div className="timeline-dot"></div>
+                                <div className="timeline-content">
+                                  <div className="timeline-row">
+                                    <span className="timeline-date">{formatDate(p.date)}</span>
+                                    <span className="timeline-amount">{formatAmount(p.amount, currency)}</span>
+                                  </div>
+                                  {p.note && <div className="timeline-note">{p.note}</div>}
+                                  <div className="timeline-remaining">
+                                    Remaining: {formatAmount(Math.max(0, currentRunningBalance), currency)}
+                                  </div>
+                                  <div className="timeline-actions">
+                                    <button onClick={() => openEditPaySheet(d, p)}>Edit</button>
+                                    <button className="danger" onClick={() => { if(window.confirm('Delete this payment record?')) deletePayment(d.id, p.id); }}>Delete</button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          });
+
+                        return timelineItems;
+                      })()}
+                    </div>
                   </div>
                 )}
 
@@ -268,6 +373,23 @@ export default function Debts() {
           <div className="input-group"><label>Amount</label><CalculatorInput value={newAmount} onChange={setNewAmount} /></div>
           <div className="input-group"><label>Reason (optional)</label><input className="input" placeholder="What for?" value={newReason} onChange={(e) => setNewReason(e.target.value)} /></div>
           <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Due Date (optional)</label><DatePicker value={newDueDate} onChange={setNewDueDate} /></div>
+
+          {/* Reminder settings */}
+          {newDueDate && (
+            <div className="input-group">
+              <label>Remind Me</label>
+              <div className="reminder-toggles">
+                <div className="reminder-toggle-item" onClick={() => setRemindOneDayBefore(!remindOneDayBefore)}>
+                  <div className={`reminder-checkbox ${remindOneDayBefore ? 'checked' : ''}`} />
+                  <span>1 day before</span>
+                </div>
+                <div className="reminder-toggle-item" onClick={() => setRemindOnDueDate(!remindOnDueDate)}>
+                  <div className={`reminder-checkbox ${remindOnDueDate ? 'checked' : ''}`} />
+                  <span>On due date</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Always-visible Account Picker */}
           <div className="input-group">

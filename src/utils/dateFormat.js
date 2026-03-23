@@ -1,8 +1,9 @@
 // Date formatting utilities — portable, no DOM
 
 export const formatDate = (dateStr) => {
-  // Parse as local date to avoid UTC offset issues
-  const parts = dateStr.split('-');
+  // Parse as local date to avoid UTC offset issues, handle ISO strings too
+  const cleanDateStr = dateStr.split('T')[0];
+  const parts = cleanDateStr.split('-');
   const d = new Date(parts[0], parts[1] - 1, parts[2]);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

@@ -21,6 +21,7 @@ export const useDebtStore = create(
           dueDate: data.dueDate || null,
           status: 'active', // 'active' | 'paid'
           payments: [],
+          reminders: data.reminders || { oneDayBefore: true, onDueDate: true },
           createdAt: new Date().toISOString(),
         };
         set((state) => ({
@@ -39,7 +40,7 @@ export const useDebtStore = create(
               id: generateId(),
               amount: amt,
               note,
-              date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
+              date: dateStr ? dateStr.split('T')[0] : new Date().toISOString().split('T')[0],
             };
             return {
               ...d,
@@ -79,7 +80,7 @@ export const useDebtStore = create(
             const newPaid = d.paidAmount - oldPayment.amount + amt;
             const updatedPayments = d.payments.map((p) => 
                p.id === paymentId 
-                 ? { ...p, amount: amt, note, date: dateStr ? new Date(dateStr).toISOString() : p.date } 
+                 ? { ...p, amount: amt, note, date: dateStr ? dateStr.split('T')[0] : p.date } 
                  : p
             );
 
@@ -137,6 +138,21 @@ export const useDebtStore = create(
       clearAll: () => set({ debts: [] }),
 
       importDebts: (data) => set({ debts: data }),
+
+      getActiveReminders: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        
+        return get().debts.filter(d => {
+          if (d.status !== 'active' || !d.dueDate) return false;
+          const dueStr = d.dueDate.split('T')[0];
+          
+          const isToday = d.reminders?.onDueDate && dueStr === today;
+          const isTomorrow = d.reminders?.oneDayBefore && dueStr === tomorrow;
+          
+          return isToday || isTomorrow;
+        });
+      },
     }),
     {
       name: 'wallet-debts',
