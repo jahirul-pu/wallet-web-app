@@ -1,5 +1,5 @@
 #dashboard-page {
-  max-width: 1000px;
+  max-width: var(--max-width);
   min-height: 90vh;
   margin: 0 auto;
 }
@@ -1326,7 +1326,7 @@ html[data-theme="dark"] .analytics-line-wrapper.modern::before {
 /* --- DESKTOP GRID LAYOUT --- */
 @media (min-width: 1024px) {
   .dashboard-grid {
-    max-width: 800px;
+    max-width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
