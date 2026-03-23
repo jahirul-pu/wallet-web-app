@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useBudgetStore } from '../stores/useBudgetStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -14,14 +15,17 @@ export default function Budgets() {
   const budgets = useBudgetStore((s) => s.budgets);
   const addBudget = useBudgetStore((s) => s.addBudget);
   const deleteBudget = useBudgetStore((s) => s.deleteBudget);
+  const updateBudget = useBudgetStore((s) => s.updateBudget);
   const getBudgetStatus = useBudgetStore((s) => s.getBudgetStatus);
   const transactions = useTransactionStore((s) => s.transactions);
   const currency = useSettingsStore((s) => s.currency);
+  const navigate = useNavigate();
 
   const currentMonth = getMonthKey(new Date().toISOString());
   const [showSheet, setShowSheet] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [newAmount, setNewAmount] = useState('');
+  const [editingId, setEditingId] = useState(null);
 
   const monthBudgets = useMemo(() => {
     return budgets
@@ -37,11 +41,33 @@ export default function Budgets() {
 
   const handleAdd = () => {
     if (!newCategory || !newAmount) return;
-    addBudget({ category: newCategory, amount: newAmount, month: currentMonth });
+    
+    if (editingId) {
+      updateBudget(editingId, { amount: newAmount });
+    } else {
+      addBudget({ category: newCategory, amount: newAmount, month: currentMonth });
+    }
+    
     setNewCategory('');
     setNewAmount('');
+    setEditingId(null);
     setShowSheet(false);
   };
+
+  const openEdit = (b) => {
+    setEditingId(b.id);
+    setNewCategory(b.category);
+    setNewAmount(String(b.amount));
+    setShowSheet(true);
+  };
+
+  const getDaysLeft = () => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return Math.max(1, lastDay - now.getDate() + 1);
+  };
+  const daysLeft = getDaysLeft();
+  const safeDailyTotal = Math.max(0, (totalBudget - totalSpent) / daysLeft);
 
   const existingCategories = monthBudgets.map((b) => b.category);
   const availableCategories = getExpenseCategories().filter(
@@ -50,7 +76,17 @@ export default function Budgets() {
 
   return (
     <div className="page" id="budgets-page">
-      <h1 className="page-title">Budgets</h1>
+      <div className="budget-page-header">
+        <div>
+          <h1 className="page-title" style={{ marginBottom: '4px' }}>
+            {new Date().toLocaleString('default', { month: 'long' })} Budget
+          </h1>
+          <div className="budget-reset-badge">
+            <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Resets in {daysLeft - 1} days
+          </div>
+        </div>
+      </div>
 
       {/* Overview */}
       <div className="budget-overview card">
@@ -81,12 +117,14 @@ export default function Budgets() {
         <div className="budget-overview-context">
           {Math.round((totalSpent / (totalBudget || 1)) * 100)}% used
           <span className="budget-context-dot">•</span>
-          {(() => {
-            const now = new Date();
-            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            return lastDay - now.getDate();
-          })()} days left
+          {daysLeft - 1 > 0 ? `${daysLeft - 1} days left` : 'Last day'}
         </div>
+        
+        {safeDailyTotal > 0 && (
+          <div className="budget-daily-guidance">
+            💡 You can spend <strong>{formatAmount(safeDailyTotal, currency)}/day</strong> overall to stay on track.
+          </div>
+        )}
       </div>
 
       {/* Budget list */}
@@ -139,17 +177,35 @@ export default function Budgets() {
                 <div className="budget-item-context">
                   {Math.round(pct)}% used
                   <span className="budget-context-dot">•</span>
-                  {(() => {
-                    const now = new Date();
-                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                    return lastDay - now.getDate();
-                  })()} days left
+                  {daysLeft - 1 > 0 ? `${daysLeft - 1} days left` : 'Last day'}
                 </div>
+                
+                {(!exceeded && remaining > 0) && (
+                  <div className="budget-item-guidance">
+                    Safe to spend: <strong>{formatAmount(remaining / daysLeft, currency)}/day</strong>
+                  </div>
+                )}
+
+                {b.status?.topExpense && (
+                  <div className="budget-item-insight">
+                    Most spent on: <strong>{b.status.topExpense.party || b.status.topExpense.note || 'General'}</strong>
+                  </div>
+                )}
+
                 {tierLabel && (
                   <div className={`budget-status-label ${tierClass}`}>
                     {tierLabel}
                   </div>
                 )}
+                
+                <div className="budget-card-actions">
+                  <button className="btn btn-primary btn-sm" onClick={() => navigate(`/add?type=expense&category=${cat.id}`)}>
+                    + Add Expense
+                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => openEdit(b)}>
+                    Adjust
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -163,15 +219,20 @@ export default function Budgets() {
         </div>
       )}
 
-      <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)' }} onClick={() => setShowSheet(true)} id="add-budget-btn">
+      <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)' }} onClick={() => {
+        setEditingId(null);
+        setNewCategory('');
+        setNewAmount('');
+        setShowSheet(true);
+      }} id="add-budget-btn">
         + Set Budget
       </button>
 
-      <BottomSheet isOpen={showSheet} onClose={() => setShowSheet(false)} title="Set Budget">
+      <BottomSheet isOpen={showSheet} onClose={() => setShowSheet(false)} title={editingId ? "Adjust Budget" : "Set Budget"}>
         <div className="sheet-form">
           <div className="input-group">
             <label>Category</label>
-            <div className="category-picker" style={{ gap: '8px', marginTop: '8px' }}>
+            <div className="category-picker" style={{ gap: '8px', marginTop: '8px', pointerEvents: editingId ? 'none' : 'auto', opacity: editingId ? 0.7 : 1 }}>
               {availableCategories.map(([key, cat]) => (
                 <button
                   key={key}

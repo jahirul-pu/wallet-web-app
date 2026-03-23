@@ -44,6 +44,8 @@ export const useBudgetStore = create(
         const budget = get().budgets.find((b) => b.id === budgetId);
         if (!budget) return null;
 
+        let topExpense = null;
+
         const spent = transactions
           .filter((t) => {
             if (t.type !== 'expense' || t.category !== budget.category) return false;
@@ -51,12 +53,17 @@ export const useBudgetStore = create(
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             return key === budget.month;
           })
-          .reduce((sum, t) => sum + t.amount, 0);
+          .reduce((sum, t) => {
+            if (!topExpense || t.amount > topExpense.amount) {
+              topExpense = t;
+            }
+            return sum + t.amount;
+          }, 0);
 
         const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
         const status = percentage >= 100 ? 'exceeded' : percentage >= 80 ? 'warning' : 'normal';
 
-        return { spent, percentage, status, remaining: budget.amount - spent };
+        return { spent, percentage, status, remaining: budget.amount - spent, topExpense };
       },
 
       clearAll: () => set({ budgets: [] }),
