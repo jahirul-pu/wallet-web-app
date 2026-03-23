@@ -34,8 +34,8 @@ export const formatAmount = (amount, currencyCode = DEFAULT_CURRENCY) => {
 
   // Format with commas using en-US for English digits across all currencies
   const formatted = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : 2,
-    maximumFractionDigits: currencyCode === 'JPY' || currencyCode === 'KRW' ? 0 : 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(Math.abs(num));
 
   const sign = num < 0 ? '-' : '';

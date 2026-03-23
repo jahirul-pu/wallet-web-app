@@ -138,7 +138,7 @@ export default function Sidebar() {
   const transactions = useTransactionStore((s) => s.transactions);
   const debts = useDebtStore((s) => s.debts);
   const currency = useSettingsStore((s) => s.currency);
-  const { maskText } = usePrivacy();
+  const { mask } = usePrivacy();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
   });
@@ -177,13 +177,6 @@ export default function Sidebar() {
     return debts.filter((d) => d.status === 'active' && d.dueDate && new Date(d.dueDate) < now).length;
   }, [debts]);
 
-  const fmt = (n) => {
-    const abs = Math.abs(n);
-    if (abs >= 1e6) return (abs / 1e6).toFixed(1) + 'M';
-    if (abs >= 1e3) return (abs / 1e3).toFixed(1) + 'K';
-    return abs.toLocaleString('en-US', { maximumFractionDigits: 0 });
-  };
-
   return (
     <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-brand">
@@ -194,10 +187,10 @@ export default function Sidebar() {
       <div className="sidebar-status-card">
         <div className="sidebar-status-label">Vault Balance</div>
         <div className="sidebar-status-amount">
-          {maskText(`${currency?.symbol || '৳'}${fmt(totalBalance)}`)}
+          {mask(totalBalance, currency)}
         </div>
         <div className={`sidebar-status-net ${monthlyNet >= 0 ? 'positive' : 'negative'}`}>
-          {monthlyNet >= 0 ? '↑' : '↓'} {maskText(`${currency?.symbol || '৳'}${fmt(monthlyNet)}`)} this month
+          {monthlyNet >= 0 ? '↑' : '↓'} {mask(Math.abs(monthlyNet), currency)} this month
         </div>
       </div>
 
