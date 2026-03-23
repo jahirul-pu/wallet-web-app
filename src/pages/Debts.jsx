@@ -37,6 +37,8 @@ export default function Debts() {
   const [payAmount, setPayAmount] = useState('');
   const [payNote, setPayNote] = useState('');
   const [payDate, setPayDate] = useState('');
+  const [sortMode, setSortMode] = useState('recent');
+  const [moreMenuId, setMoreMenuId] = useState(null);
 
   // New debt form
   const [newPerson, setNewPerson] = useState('');
@@ -52,6 +54,31 @@ export default function Debts() {
   const activeReminders = useMemo(() => getActiveReminders(), [debts, getActiveReminders]);
 
   const filteredDebts = debts.filter((d) => d.status === tab);
+
+  const netPosition = totalOwedToMe - totalIOwe;
+
+  const sortedDebts = useMemo(() => {
+    const list = [...filteredDebts];
+    switch (sortMode) {
+      case 'due_soon':
+        return list.sort((a, b) => {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        });
+      case 'largest':
+        return list.sort((a, b) => (b.totalAmount - b.paidAmount) - (a.totalAmount - a.paidAmount));
+      case 'updated':
+        return list.sort((a, b) => {
+          const aLast = a.payments.length ? new Date(a.payments[a.payments.length - 1].date) : new Date(a.createdAt);
+          const bLast = b.payments.length ? new Date(b.payments[b.payments.length - 1].date) : new Date(b.createdAt);
+          return bLast - aLast;
+        });
+      case 'recent':
+      default:
+        return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+  }, [filteredDebts, sortMode]);
 
   const handleAddDebt = () => {
     if (!newPerson || !newAmount) return;
@@ -130,21 +157,27 @@ export default function Debts() {
     <div className="page" id="debts-page">
       <h1 className="page-title">Debts & Loans</h1>
 
-      {/* Summary */}
-      <div className="debt-summary-cards">
-        <div className="debt-summary-card card">
-          <div className="debt-summary-label">
-            <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Receivable
+      {/* Summary — Enhanced */}
+      <div className="debt-summary-insight">
+        <div className="debt-summary-cards">
+          <div className="debt-summary-card card">
+            <div className="debt-summary-label">
+              <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              You'll Receive
+            </div>
+            <div className="debt-summary-value income">{formatAmount(totalOwedToMe, currency)}</div>
           </div>
-          <div className="debt-summary-value income">{formatAmount(totalOwedToMe, currency)}</div>
+          <div className="debt-summary-card card">
+            <div className="debt-summary-label">
+              <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              You Owe
+            </div>
+            <div className="debt-summary-value expense">{formatAmount(totalIOwe, currency)}</div>
+          </div>
         </div>
-        <div className="debt-summary-card card">
-          <div className="debt-summary-label">
-            <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            Payable
-          </div>
-          <div className="debt-summary-value expense">{formatAmount(totalIOwe, currency)}</div>
+        <div className={`debt-net-position ${netPosition >= 0 ? 'positive' : 'negative'}`}>
+          <span className="net-label">Net Position</span>
+          <span className="net-value">{netPosition >= 0 ? '+' : ''}{formatAmount(netPosition, currency)}</span>
         </div>
       </div>
 
@@ -175,7 +208,7 @@ export default function Debts() {
         </div>
       )}
 
-      {/* Tabs */}
+      {/* Tabs + Sort */}
       <div className="debt-tabs">
         <button className={`debt-tab ${tab === 'active' ? 'active' : ''}`} onClick={() => setTab('active')}>
           Active ({debts.filter((d) => d.status === 'active').length})
@@ -185,10 +218,29 @@ export default function Debts() {
         </button>
       </div>
 
+      {/* Sort Bar */}
+      <div className="debt-sort-bar">
+        <span className="debt-sort-label">Sort:</span>
+        {[
+          { key: 'recent', label: 'Recent' },
+          { key: 'due_soon', label: 'Due Soon' },
+          { key: 'largest', label: 'Largest' },
+          { key: 'updated', label: 'Updated' },
+        ].map((s) => (
+          <button
+            key={s.key}
+            className={`debt-sort-chip ${sortMode === s.key ? 'active' : ''}`}
+            onClick={() => setSortMode(s.key)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* Debt list */}
-      {filteredDebts.length > 0 ? (
+      {sortedDebts.length > 0 ? (
         <div className="debt-list">
-          {filteredDebts.map((d) => {
+          {sortedDebts.map((d) => {
             const remaining = d.totalAmount - d.paidAmount;
             const pct = (d.paidAmount / d.totalAmount) * 100;
             const overdue = isOverdue(d.dueDate) && d.status === 'active';
@@ -205,6 +257,7 @@ export default function Debts() {
                         : <><svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="7" x2="7" y2="17"></line><polyline points="17 17 7 17 7 7"></polyline></svg> You owe them</>
                       }
                     </div>
+                    <div className="debt-card-date">Since {formatDate(d.createdAt)}</div>
                   </div>
                   <div className="debt-card-amount">
                     {formatAmount(remaining, currency)}
@@ -332,17 +385,43 @@ export default function Debts() {
                       + Payment
                     </button>
                     <button className="btn btn-secondary btn-sm" onClick={() => markAsPaid(d.id)}>
-                       Settle
+                      Settle {formatAmount(remaining, currency)}
                     </button>
-                    <button className="btn btn-danger btn-sm" onClick={() => { if(window.confirm('Delete this active debt?')) deleteDebt(d.id); }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
+                    <div className="debt-more-menu-wrapper">
+                      <button
+                        className="btn btn-icon btn-sm debt-more-btn"
+                        onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}
+                      >
+                        ⋮
+                      </button>
+                      {moreMenuId === d.id && (
+                        <div className="debt-more-dropdown">
+                          <button onClick={() => { if(window.confirm(`Delete this ${d.status} debt?`)) { deleteDebt(d.id); setMoreMenuId(null); } }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="debt-card-actions" style={{ marginTop: '16px' }}>
-                    <button className="btn btn-danger btn-sm" onClick={() => { if(window.confirm('Delete this settled debt record?')) deleteDebt(d.id); }}>
-                      Delete Settled Record
-                    </button>
+                    <div className="debt-more-menu-wrapper">
+                      <button
+                        className="btn btn-icon btn-sm debt-more-btn"
+                        onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}
+                      >
+                        ⋮
+                      </button>
+                      {moreMenuId === d.id && (
+                        <div className="debt-more-dropdown">
+                          <button onClick={() => { if(window.confirm('Delete this settled debt record?')) { deleteDebt(d.id); setMoreMenuId(null); } }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Delete Record
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
