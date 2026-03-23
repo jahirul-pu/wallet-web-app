@@ -702,5 +702,91 @@
 @keyframes highlightGlow {
   0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(111, 251, 190, 0); }
   15% { transform: scale(1.03); box-shadow: 0 0 0 12px rgba(111, 251, 190, 0.4); border-color: var(--color-accent); }
-  100% { transform: scale(1); box-shadow: 0 0 0 30px rgba(111, 251, 190, 0); border-color: var(--color-border); }
+}
+
+/* Installment Plan UI Styles */
+.installment-toggle-wrap {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(99, 102, 241, 0.05); /* very light primary */
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-md);
+  margin-top: -6px;
+}
+
+.installment-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.installment-toggle-text {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+}
+
+.installment-preview {
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.installment-progress-lbl {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--color-border);
+  margin-bottom: 4px;
+}
+
+.installment-extra-fee {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin-bottom: 4px;
+  margin-top: 2px;
+}
+
+.installment-next-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-bg);
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.installment-next-lbl {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.installment-next-val {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.installment-next-val.urgent {
+  color: var(--color-danger);
+}
+
+.installment-pay-tip {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: var(--space-4);
+  margin-top: -8px;
 }

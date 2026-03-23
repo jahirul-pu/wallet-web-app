@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getDebtProgress } from '../utils/debtUtils';
 
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -30,6 +31,7 @@ export const useDebtStore = create(
           status: 'active', // 'active' | 'paid'
           payments: [],
           reminders: data.reminders || { oneDayBefore: true, onDueDate: true },
+          installmentPlan: data.installmentPlan || null,
           createdAt: getLocalToday(),
         };
         set((state) => ({
@@ -152,10 +154,12 @@ export const useDebtStore = create(
           .reduce((sum, d) => sum + (d.totalAmount - d.paidAmount), 0),
 
       getOverdueDebts: () => {
-        const now = new Date(new Date().toDateString());
-        return get().debts.filter(
-          (d) => d.status === 'active' && d.dueDate && new Date(d.dueDate) < now
-        );
+        const todayStr = getLocalToday();
+        return get().debts.filter(d => {
+           if (d.status !== 'active') return false;
+           const progress = getDebtProgress(d);
+           return progress.nextDueDate && progress.nextDueDate < todayStr;
+        });
       },
 
       clearAll: () => set({ debts: [] }),
@@ -169,8 +173,10 @@ export const useDebtStore = create(
         const tomorrow = `${dTomorrow.getFullYear()}-${String(dTomorrow.getMonth() + 1).padStart(2, '0')}-${String(dTomorrow.getDate()).padStart(2, '0')}`;
         
         return get().debts.filter(d => {
-          if (d.status !== 'active' || !d.dueDate) return false;
-          const dueStr = d.dueDate.split('T')[0];
+          if (d.status !== 'active') return false;
+          const progress = getDebtProgress(d);
+          if (!progress.nextDueDate) return false;
+          const dueStr = progress.nextDueDate.split('T')[0];
           
           const isToday = d.reminders?.onDueDate && dueStr === today;
           const isTomorrow = d.reminders?.oneDayBefore && dueStr === tomorrow;

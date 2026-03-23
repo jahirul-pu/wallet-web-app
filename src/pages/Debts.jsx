@@ -4,8 +4,9 @@ import { useAccountStore } from '../stores/useAccountStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { usePrivacy } from '../hooks/usePrivacy';
-import { formatDate, isOverdue, daysUntil, toInputDate } from '../utils/dateFormat';
+import { formatDate, daysUntil, toInputDate } from '../utils/dateFormat';
 import { getAccountIcon } from '../utils/accountIcons';
+import { getDebtProgress } from '../utils/debtUtils';
 import BottomSheet from '../components/BottomSheet';
 import DatePicker from '../components/DatePicker';
 import CalculatorInput from '../components/CalculatorInput';
@@ -50,12 +51,16 @@ export default function Debts() {
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const [remindOneDayBefore, setRemindOneDayBefore] = useState(true);
   const [remindOnDueDate, setRemindOnDueDate] = useState(true);
+  
+  // Installment support
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installmentAmount, setInstallmentAmount] = useState('');
+  const [installmentMonths, setInstallmentMonths] = useState('');
 
   const getActiveReminders = useDebtStore((s) => s.getActiveReminders);
   const activeReminders = useMemo(() => getActiveReminders(), [debts, getActiveReminders]);
 
   const filteredDebts = debts.filter((d) => d.status === tab);
-
   const netPosition = totalOwedToMe - totalIOwe;
 
   const sortedDebts = useMemo(() => {
@@ -63,9 +68,11 @@ export default function Debts() {
     switch (sortMode) {
       case 'due_soon':
         return list.sort((a, b) => {
-          if (!a.dueDate) return 1;
-          if (!b.dueDate) return -1;
-          return new Date(a.dueDate) - new Date(b.dueDate);
+          const pa = getDebtProgress(a);
+          const pb = getDebtProgress(b);
+          if (!pa.nextDueDate) return 1;
+          if (!pb.nextDueDate) return -1;
+          return new Date(pa.nextDueDate) - new Date(pb.nextDueDate);
         });
       case 'largest':
         return list.sort((a, b) => (b.totalAmount - b.paidAmount) - (a.totalAmount - a.paidAmount));
@@ -83,45 +90,67 @@ export default function Debts() {
 
   const handleAddDebt = () => {
     if (!newPerson || !newAmount) return;
+    
+    // Validate installment logic
+    if (isInstallment && (!installmentAmount || Number(installmentAmount) <= 0 || !installmentMonths || Number(installmentMonths) <= 0)) {
+      alert("Please enter a valid installment amount and duration.");
+      return;
+    }
+
+    const tAmt = Number(newAmount);
+    let plan = null;
+    let finalDebtAmount = newAmount;
+    
+    if (isInstallment) {
+      const iAmt = Number(installmentAmount);
+      const iMonths = Number(installmentMonths);
+      const computedTotal = iAmt * iMonths;
+      finalDebtAmount = computedTotal.toString();
+      
+      plan = {
+        amount: iAmt,
+        frequency: 'monthly',
+        startDate: newDueDate || toInputDate(new Date()),
+        totalPayments: iMonths,
+        principalInfo: {
+           principal: tAmt,
+           extra: computedTotal - tAmt
+        }
+      };
+    }
+
     addDebt({
       personName: newPerson,
       type: newType,
-      totalAmount: newAmount,
+      totalAmount: finalDebtAmount,
       reason: newReason,
-      dueDate: newDueDate || null,
+      dueDate: isInstallment ? null : (newDueDate || null), // hide base dueDate if installment exists
       reminders: { oneDayBefore: remindOneDayBefore, onDueDate: remindOnDueDate },
+      installmentPlan: plan
     });
 
-    // Credit/debit to wallet if an actual account is selected
     if (selectedAccountId) {
-      const amt = Number(newAmount);
+      // Wallet adjustment only uses the actual standard received/sent Principal
       if (newType === 'i_owe') {
-        // Loan received → money comes IN to your wallet
-        adjustBalance(selectedAccountId, amt, 'income');
+        adjustBalance(selectedAccountId, tAmt, 'income');
         addTransaction({
-          type: 'income',
-          amount: amt,
-          category: 'other',
-          date: toInputDate(),
-          note: `Loan from ${newPerson}${newReason ? ' — ' + newReason : ''}`,
-          accountId: selectedAccountId,
+          type: 'income', amount: tAmt, category: 'other',
+          date: toInputDate(), note: `Loan from ${newPerson}${newReason ? ' — ' + newReason : ''}`, accountId: selectedAccountId,
         });
       } else {
-        // Lent money → money goes OUT from your wallet
-        adjustBalance(selectedAccountId, amt, 'expense');
+        adjustBalance(selectedAccountId, tAmt, 'expense');
         addTransaction({
-          type: 'expense',
-          amount: amt,
-          category: 'other',
-          date: toInputDate(),
-          note: `Lent to ${newPerson}${newReason ? ' — ' + newReason : ''}`,
-          accountId: selectedAccountId,
+          type: 'expense', amount: tAmt, category: 'other',
+          date: toInputDate(), note: `Lent to ${newPerson}${newReason ? ' — ' + newReason : ''}`, accountId: selectedAccountId,
         });
       }
     }
 
     setNewPerson(''); setNewAmount(''); setNewReason(''); setNewDueDate('');
     setSelectedAccountId('');
+    setIsInstallment(false);
+    setInstallmentAmount('');
+    setInstallmentMonths('');
     setShowAddSheet(false);
   };
 
@@ -139,7 +168,8 @@ export default function Debts() {
   const openPaySheet = (debt) => {
     setSelectedDebt(debt);
     setSelectedPaymentId(null);
-    setPayAmount('');
+    const progress = getDebtProgress(debt);
+    setPayAmount(progress.isInstallment && progress.nextUpcomingAmount > 0 ? progress.nextUpcomingAmount.toString() : '');
     setPayNote('');
     setPayDate(toInputDate());
     setShowPaySheet(true);
@@ -192,7 +222,8 @@ export default function Debts() {
           <div className="reminders-alert-list">
             {activeReminders.map(d => {
               const today = toInputDate();
-              const isToday = d.dueDate === today;
+              const progress = getDebtProgress(d);
+              const isToday = progress.nextDueDate === today;
               return (
                 <div key={d.id} className="reminders-alert-item" onClick={() => {
                   const el = document.getElementById(`debt-${d.id}`);
@@ -201,7 +232,7 @@ export default function Debts() {
                   setTimeout(() => el?.classList.remove('highlight-flash'), 2000);
                 }}>
                   <div className="alert-item-time">{isToday ? 'TODAY' : 'TOMORROW'}</div>
-                  <div className="alert-item-text">{d.type === 'i_owe' ? 'Pay' : 'Collect from'} <strong>{d.personName}</strong>: {mask(d.totalAmount - d.paidAmount, currency)}</div>
+                  <div className="alert-item-text">{d.type === 'i_owe' ? 'Pay' : 'Collect from'} <strong>{d.personName}</strong>: {mask(progress.nextUpcomingAmount > 0 ? progress.nextUpcomingAmount : (d.totalAmount - d.paidAmount), currency)}</div>
                 </div>
               );
             })}
@@ -219,7 +250,6 @@ export default function Debts() {
         </button>
       </div>
 
-      {/* Sort Bar */}
       <div className="debt-sort-bar">
         <span className="debt-sort-label">Sort:</span>
         {[
@@ -242,10 +272,11 @@ export default function Debts() {
       {sortedDebts.length > 0 ? (
         <div className="debt-list">
           {sortedDebts.map((d) => {
-            const remaining = d.totalAmount - d.paidAmount;
+            const progress = getDebtProgress(d);
+            const remaining = progress.remainingAmount;
             const pct = (d.paidAmount / d.totalAmount) * 100;
-            const overdue = isOverdue(d.dueDate) && d.status === 'active';
-            const days = daysUntil(d.dueDate);
+            const overdue = progress.isOverdue;
+            const days = progress.nextDueDate ? daysUntil(progress.nextDueDate) : null;
 
             return (
               <div key={d.id} id={`debt-${d.id}`} className={`debt-card card ${overdue ? 'overdue' : ''}`}>
@@ -269,6 +300,19 @@ export default function Debts() {
                 {d.reason && <div className="debt-card-reason">{d.reason}</div>}
 
                 <div className="debt-progress-section">
+                  {progress.isInstallment && (
+                    <div className="installment-progress-lbl">
+                       {progress.completedPaymentsText} payments completed
+                    </div>
+                  )}
+                  {progress.isInstallment && d.installmentPlan?.principalInfo && (
+                     <div className="installment-extra-fee">
+                        Principal {d.type === 'i_owe' ? 'Received' : 'Lent'}: <strong>{mask(d.installmentPlan.principalInfo.principal, currency)}</strong>
+                        {d.installmentPlan.principalInfo.extra > 0 && (
+                          <span style={{ opacity: 0.8 }}> (+ {mask(d.installmentPlan.principalInfo.extra, currency)} interest)</span>
+                        )}
+                     </div>
+                  )}
                   <div className="debt-progress-labels">
                     <span className="debt-progress-paid">
                       {mask(d.paidAmount, currency)} <span className="debt-progress-of">/ {mask(d.totalAmount, currency)}</span>
@@ -283,7 +327,17 @@ export default function Debts() {
                       style={{ width: `${Math.min(pct, 100)}%` }}
                     />
                   </div>
-                  {remaining > 0 && (
+                  
+                  {progress.isInstallment && d.status === 'active' && (
+                    <div className="installment-next-info">
+                       <span className="installment-next-lbl">Next schedule:</span>
+                       <span className={`installment-next-val ${overdue ? 'urgent' : ''}`}>
+                         {mask(progress.nextUpcomingAmount, currency)} ({formatDate(progress.nextDueDate)})
+                       </span>
+                    </div>
+                  )}
+
+                  {!progress.isInstallment && remaining > 0 && (
                     <div className="debt-progress-remaining">
                       Remaining: <strong>{mask(remaining, currency)}</strong>
                     </div>
@@ -291,7 +345,7 @@ export default function Debts() {
                 </div>
 
                 <div className="debt-card-meta">
-                  {d.dueDate && d.status === 'active' && (() => {
+                  {progress.nextDueDate && d.status === 'active' && (() => {
                     let urgencyClass = 'urgency-neutral';
                     let text = `Due in ${days} day${days !== 1 ? 's' : ''}`;
                     
@@ -309,7 +363,7 @@ export default function Debts() {
                       </span>
                     );
                   })()}
-                  {d.dueDate && d.status === 'paid' && (
+                  {d.status === 'paid' && (
                     <span className="urgency-settled">
                       ✅ Settled
                     </span>
@@ -317,25 +371,16 @@ export default function Debts() {
                   {d.payments.length > 0 && (
                     <span>{d.payments.length} payment{d.payments.length > 1 ? 's' : ''}</span>
                   )}
-                  {d.status === 'active' && d.dueDate && (
-                    <div className="debt-card-reminders-tags">
-                      {d.reminders?.oneDayBefore && <span className="reminder-tag">1d before</span>}
-                      {d.reminders?.onDueDate && <span className="reminder-tag">on due date</span>}
-                      {!d.reminders?.oneDayBefore && !d.reminders?.onDueDate && <span className="reminder-tag muted">reminders off</span>}
-                    </div>
-                  )}
                 </div>
 
                 {d.payments.length > 0 && (
                   <div className="debt-timeline-container">
                     <div className="debt-timeline-header">Payment Timeline</div>
                     <div className="debt-timeline">
-                      {/* Evolution of payments */}
                       {(() => {
                         let currentRunningBalance = d.totalAmount;
                         const timelineItems = [];
 
-                        // 1. Initial State
                         timelineItems.push(
                           <div key="start" className="timeline-item start">
                             <div className="timeline-dot"></div>
@@ -348,7 +393,6 @@ export default function Debts() {
                           </div>
                         );
 
-                        // 2. Payments
                         d.payments
                           .sort((a, b) => new Date(a.date) - new Date(b.date))
                           .forEach((p) => {
@@ -383,18 +427,15 @@ export default function Debts() {
                 {d.status === 'active' ? (
                   <div className="debt-card-actions">
                     <button className="btn btn-primary btn-sm" onClick={() => openPaySheet(d)}>
-                      + Payment
+                      {progress.isInstallment ? '+ Pay Installment' : '+ Payment'}
                     </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => markAsPaid(d.id)}>
-                      Settle {mask(remaining, currency)}
-                    </button>
-                    <div className="debt-more-menu-wrapper">
-                      <button
-                        className="btn btn-icon btn-sm debt-more-btn"
-                        onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}
-                      >
-                        ⋮
+                    {!progress.isInstallment && (
+                      <button className="btn btn-secondary btn-sm" onClick={() => markAsPaid(d.id)}>
+                        Settle {mask(remaining, currency)}
                       </button>
+                    )}
+                    <div className="debt-more-menu-wrapper">
+                      <button className="btn btn-icon btn-sm debt-more-btn" onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}>⋮</button>
                       {moreMenuId === d.id && (
                         <div className="debt-more-dropdown">
                           <button onClick={() => { if(window.confirm(`Delete this ${d.status} debt?`)) { deleteDebt(d.id); setMoreMenuId(null); } }}>
@@ -408,12 +449,7 @@ export default function Debts() {
                 ) : (
                   <div className="debt-card-actions" style={{ marginTop: '16px' }}>
                     <div className="debt-more-menu-wrapper">
-                      <button
-                        className="btn btn-icon btn-sm debt-more-btn"
-                        onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}
-                      >
-                        ⋮
-                      </button>
+                      <button className="btn btn-icon btn-sm debt-more-btn" onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}>⋮</button>
                       {moreMenuId === d.id && (
                         <div className="debt-more-dropdown">
                           <button onClick={() => { if(window.confirm('Delete this settled debt record?')) { deleteDebt(d.id); setMoreMenuId(null); } }}>
@@ -450,11 +486,45 @@ export default function Debts() {
             <button className={`type-btn ${newType === 'owed_to_me' ? 'active income' : ''}`} onClick={() => setNewType('owed_to_me')} type="button">Owed to Me</button>
           </div>
           <div className="input-group"><label>Person Name</label><input className="input" placeholder="Who?" value={newPerson} onChange={(e) => setNewPerson(e.target.value)} /></div>
-          <div className="input-group"><label>Amount</label><CalculatorInput value={newAmount} onChange={setNewAmount} /></div>
+          <div className="input-group"><label>Total Amount</label><CalculatorInput value={newAmount} onChange={setNewAmount} /></div>
           <div className="input-group"><label>Reason (optional)</label><input className="input" placeholder="What for?" value={newReason} onChange={(e) => setNewReason(e.target.value)} /></div>
-          <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Due Date (optional)</label><DatePicker value={newDueDate} onChange={setNewDueDate} /></div>
 
-          {/* Reminder settings */}
+          <div className="installment-toggle-wrap">
+             <label className="installment-toggle">
+                <input type="checkbox" checked={isInstallment} onChange={(e) => setIsInstallment(e.target.checked)} />
+                <span className="installment-toggle-text">Convert to Monthly Installments</span>
+             </label>
+          </div>
+
+          {isInstallment && (
+            <div className="input-group installment-highlight">
+              <label>Amount per month</label>
+              <CalculatorInput value={installmentAmount} onChange={setInstallmentAmount} />
+              
+              <div style={{ marginTop: '16px' }}>
+                <label>Duration (Months)</label>
+                <CalculatorInput value={installmentMonths} onChange={setInstallmentMonths} />
+              </div>
+
+              {newAmount && installmentAmount && installmentMonths && Number(installmentAmount) > 0 && Number(installmentMonths) > 0 && (
+                <div className="installment-preview" style={{ marginTop: '12px' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Total to be paid: {mask(Number(installmentAmount) * Number(installmentMonths), currency)}
+                  {Number(installmentAmount) * Number(installmentMonths) > Number(newAmount) && (
+                    <span style={{color: 'var(--color-expense)', marginLeft: '4px'}}>
+                       (+ {mask((Number(installmentAmount) * Number(installmentMonths)) - Number(newAmount), currency)} Interest)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="input-group" style={{ position: 'relative', zIndex: 8 }}>
+            <label>{isInstallment ? 'First Payment Date' : 'Due Date (optional)'}</label>
+            <DatePicker value={newDueDate} onChange={setNewDueDate} />
+          </div>
+
           {newDueDate && (
             <div className="input-group">
               <label>Remind Me</label>
@@ -471,13 +541,11 @@ export default function Debts() {
             </div>
           )}
 
-          {/* Always-visible Account Picker */}
           <div className="input-group">
             <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>{newType === 'i_owe' ? 'Receive into Wallet' : 'Pay from Wallet'}</span>
             </label>
             <div className="debt-account-picker">
-              {/* "None" Option */}
               <button
                 type="button"
                 className={`debt-account-option ${!selectedAccountId ? 'active' : ''}`}
@@ -488,7 +556,6 @@ export default function Debts() {
                 </span>
                 <span>None</span>
               </button>
-
               {accounts.map((acc) => (
                 <button
                   key={acc.id}
@@ -513,11 +580,16 @@ export default function Debts() {
       <BottomSheet isOpen={showPaySheet} onClose={() => { setShowPaySheet(false); setSelectedPaymentId(null); }} title={selectedPaymentId ? `Edit Payment for ${selectedDebt?.personName}` : `Pay ${selectedDebt?.personName || ''}`}>
         <div className="sheet-form">
           <div style={{ textAlign: 'center', marginBottom: 'var(--space-2)' }}>
-            <div className="debt-card-total">Remaining: {mask((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0) + (selectedPaymentId ? selectedDebt?.payments.find(p => p.id === selectedPaymentId)?.amount || 0 : 0), currency)}</div>
+            <div className="debt-card-total">Remaining overall: {mask((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0) + (selectedPaymentId ? selectedDebt?.payments.find(p => p.id === selectedPaymentId)?.amount || 0 : 0), currency)}</div>
           </div>
           <div className="input-group"><label>Payment Amount</label><CalculatorInput value={payAmount} onChange={setPayAmount} /></div>
           <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Date</label><DatePicker value={payDate} onChange={setPayDate} /></div>
           <div className="input-group"><label>Note (optional)</label><input className="input" placeholder="Payment note..." value={payNote} onChange={(e) => setPayNote(e.target.value)} /></div>
+          
+          <div className="installment-pay-tip">
+             Any extra amount paid will automatically apply to next month's installment!
+          </div>
+
           <button className={`btn submit-btn ${selectedDebt?.type === 'owed_to_me' ? 'btn-income' : 'btn-expense'}`} onClick={handlePay}>{selectedPaymentId ? 'Update Payment' : 'Record Payment'}</button>
         </div>
       </BottomSheet>
