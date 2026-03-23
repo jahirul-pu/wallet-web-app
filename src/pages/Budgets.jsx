@@ -59,10 +59,16 @@ export default function Budgets() {
             <div className="budget-overview-label">Total Budget</div>
             <div className="budget-overview-value">{formatAmount(totalBudget, currency)}</div>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ textAlign: 'center' }}>
             <div className="budget-overview-label">Spent</div>
-            <div className="budget-overview-value" style={{ color: totalSpent > totalBudget ? 'var(--color-danger)' : 'var(--color-accent)' }}>
+            <div className="budget-overview-value" style={{ color: totalSpent > totalBudget ? 'var(--color-danger)' : 'var(--color-expense)' }}>
               {formatAmount(totalSpent, currency)}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="budget-overview-label">Remaining</div>
+            <div className="budget-overview-value" style={{ color: totalBudget - totalSpent > 0 ? '#34d399' : 'var(--color-danger)' }}>
+              {formatAmount(Math.max(0, totalBudget - totalSpent), currency)}
             </div>
           </div>
         </div>
@@ -72,6 +78,15 @@ export default function Budgets() {
             style={{ width: `${Math.min((totalSpent / (totalBudget || 1)) * 100, 100)}%` }}
           />
         </div>
+        <div className="budget-overview-context">
+          {Math.round((totalSpent / (totalBudget || 1)) * 100)}% used
+          <span className="budget-context-dot">•</span>
+          {(() => {
+            const now = new Date();
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            return lastDay - now.getDate();
+          })()} days left
+        </div>
       </div>
 
       {/* Budget list */}
@@ -80,35 +95,59 @@ export default function Budgets() {
           {monthBudgets.map((b) => {
             const cat = getCategoryInfo(b.category);
             const pct = b.status?.percentage || 0;
+            const spent = b.status?.spent || 0;
+            const remaining = Math.max(0, b.amount - spent);
+            const exceeded = pct >= 100;
+
+            // Urgency tier
+            let tierClass = 'budget-safe';
+            let tierLabel = '';
+            if (pct >= 100) {
+              tierClass = 'budget-exceeded';
+              tierLabel = `🚨 Over by ${formatAmount(spent - b.amount, currency)}`;
+            } else if (pct >= 90) {
+              tierClass = 'budget-critical';
+              tierLabel = `⚠ Almost reached — ${formatAmount(remaining, currency)} left`;
+            } else if (pct >= 70) {
+              tierClass = 'budget-warning';
+              tierLabel = `${formatAmount(remaining, currency)} remaining`;
+            }
+
             return (
-              <div key={b.id} className="budget-item card">
+              <div key={b.id} className={`budget-item card ${tierClass}`}>
                 <div className="budget-item-header">
                   <div className="budget-item-left">
                     <span className="budget-item-icon" style={{ background: `${cat.color}18` }}>{cat.icon}</span>
-                    <span className="budget-item-name">{cat.name}</span>
+                    <div>
+                      <span className="budget-item-name">{cat.name}</span>
+                      <span className={`budget-pct-badge ${tierClass}`}>{Math.round(pct)}%</span>
+                    </div>
                   </div>
                   <button className="btn-delete-sm" onClick={() => deleteBudget(b.id)}>✕</button>
                 </div>
                 <div className="budget-item-amounts">
-                  <span>{formatAmount(b.status?.spent || 0, currency)}</span>
+                  <span className={exceeded ? 'budget-spent-over' : ''}>{formatAmount(spent, currency)}</span>
                   <span className="budget-item-total">/ {formatAmount(b.amount, currency)}</span>
+                  {!exceeded && <span className="budget-item-remaining">Remaining: {formatAmount(remaining, currency)}</span>}
                 </div>
                 <div className="progress-bar">
                   <div
-                    className={`progress-bar-fill ${pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : ''}`}
+                    className={`progress-bar-fill ${pct >= 100 ? 'danger' : pct >= 90 ? 'danger' : pct >= 70 ? 'warning' : ''}`}
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>
-                {pct >= 100 && (
-                  <div className="budget-alert danger">
-                    <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    Budget exceeded!
-                  </div>
-                )}
-                {pct >= 80 && pct < 100 && (
-                  <div className="budget-alert warning">
-                    <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                    Almost at limit
+                <div className="budget-item-context">
+                  {Math.round(pct)}% used
+                  <span className="budget-context-dot">•</span>
+                  {(() => {
+                    const now = new Date();
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                    return lastDay - now.getDate();
+                  })()} days left
+                </div>
+                {tierLabel && (
+                  <div className={`budget-status-label ${tierClass}`}>
+                    {tierLabel}
                   </div>
                 )}
               </div>

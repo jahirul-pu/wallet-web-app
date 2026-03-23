@@ -2,6 +2,21 @@
   margin-bottom: var(--space-6);
 }
 
+.budget-overview-context {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: var(--space-2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.budget-context-dot {
+  opacity: 0.4;
+}
+
 .budget-overview-row {
   display: flex;
   justify-content: space-between;
@@ -87,17 +102,101 @@
   color: var(--color-text-muted);
 }
 
-.budget-alert {
-  font-size: var(--text-xs);
+.budget-item-remaining {
+  margin-left: auto;
+  font-size: 0.68rem;
   font-weight: 600;
-  padding: var(--space-1) 0;
-  margin-top: var(--space-2);
+  color: #34d399;
 }
 
-.budget-alert.warning {
-  color: var(--color-warning);
-}
-
-.budget-alert.danger {
+.budget-spent-over {
   color: var(--color-danger);
+}
+
+.budget-item-context {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+/* --- Urgency Tiers --- */
+
+/* Left border accent for each tier */
+.budget-item.budget-safe {
+  border-left: 3px solid #34d399;
+}
+
+.budget-item.budget-warning {
+  border-left: 3px solid #eab308;
+}
+
+.budget-item.budget-critical {
+  border-left: 3px solid #f97316;
+}
+
+.budget-item.budget-exceeded {
+  border-left: 3px solid #ef4444;
+  animation: budgetPulse 3s infinite;
+}
+
+@keyframes budgetPulse {
+  0% { box-shadow: var(--shadow-sm); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12); }
+  100% { box-shadow: var(--shadow-sm); }
+}
+
+/* Percentage badge next to category name */
+.budget-pct-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.budget-pct-badge.budget-safe {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.budget-pct-badge.budget-warning {
+  background: rgba(234, 180, 20, 0.12);
+  color: #eab308;
+}
+
+.budget-pct-badge.budget-critical {
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+}
+
+.budget-pct-badge.budget-exceeded {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Status label below progress bar */
+.budget-status-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: var(--space-2);
+  padding: 4px 0;
+}
+
+.budget-status-label.budget-warning {
+  color: #eab308;
+}
+
+.budget-status-label.budget-critical {
+  color: #f97316;
+}
+
+.budget-status-label.budget-exceeded {
+  color: #ef4444;
 }
