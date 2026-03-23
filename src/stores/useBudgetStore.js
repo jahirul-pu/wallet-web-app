@@ -60,10 +60,36 @@ export const useBudgetStore = create(
             return sum + t.amount;
           }, 0);
 
-        const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+        // Calculate Rollover from previous month
+        let rollover = 0;
+        const [y, m] = budget.month.split('-');
+        const prevDate = new Date(Number(y), Number(m) - 2, 1);
+        const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        const prevBudget = get().budgets.find((b) => b.month === prevMonthKey && b.category === budget.category);
+        if (prevBudget) {
+          const prevSpent = transactions
+            .filter((t) => t.type === 'expense' && t.category === budget.category && t.date.startsWith(prevMonthKey))
+            .reduce((sum, t) => sum + t.amount, 0);
+          
+          if (prevBudget.amount > prevSpent) {
+            rollover = prevBudget.amount - prevSpent;
+          }
+        }
+
+        const effectiveTotalAmount = budget.amount + rollover;
+        const percentage = effectiveTotalAmount > 0 ? (spent / effectiveTotalAmount) * 100 : 0;
         const status = percentage >= 100 ? 'exceeded' : percentage >= 80 ? 'warning' : 'normal';
 
-        return { spent, percentage, status, remaining: budget.amount - spent, topExpense };
+        return { 
+          spent, 
+          percentage, 
+          status, 
+          remaining: effectiveTotalAmount - spent, 
+          topExpense,
+          rollover,
+          totalLimit: effectiveTotalAmount
+        };
       },
 
       clearAll: () => set({ budgets: [] }),

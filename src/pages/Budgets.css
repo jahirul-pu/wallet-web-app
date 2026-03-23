@@ -280,3 +280,101 @@
   padding: 6px 0;
   font-size: 0.75rem;
 }
+
+/* --- Visual Hierarchy & New Features --- */
+
+.budget-item {
+  position: relative;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
+}
+
+.budget-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.budget-inactive {
+  opacity: 0.6;
+}
+
+.budget-item.budget-exceeded {
+  background-color: rgba(239, 68, 68, 0.03); /* slight red tint */
+}
+
+.budget-rollover-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #34d399;
+  text-align: right;
+  margin-bottom: 4px;
+}
+
+/* 3-dot More Menu */
+.budget-more-menu-wrapper {
+  margin-left: auto;
+}
+
+.budget-more-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+  border: none;
+  cursor: pointer;
+}
+
+.budget-more-btn:hover {
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+}
+
+.budget-more-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  z-index: 50;
+  min-width: 140px;
+  animation: scaleIn 0.15s ease;
+}
+
+.budget-more-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.budget-more-dropdown button:hover {
+  background: var(--color-bg-input);
+}
+
+.budget-more-dropdown button.delete {
+  color: var(--color-danger);
+}
+
+.budget-more-dropdown button.delete:hover {
+  background: var(--color-danger-light);
+}

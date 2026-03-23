@@ -26,6 +26,15 @@ export default function Budgets() {
   const [newCategory, setNewCategory] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [moreMenuId, setMoreMenuId] = useState(null);
+  const [selectedBudgetForTxns, setSelectedBudgetForTxns] = useState(null);
+
+  // Close more menu when clicking outside
+  const handleGlobalClick = (e) => {
+    if (!e.target.closest('.budget-more-menu-wrapper')) {
+      setMoreMenuId(null);
+    }
+  };
 
   const monthBudgets = useMemo(() => {
     return budgets
@@ -74,8 +83,10 @@ export default function Budgets() {
     ([key]) => !existingCategories.includes(key)
   );
 
+  const alerts = monthBudgets.filter(b => b.status?.percentage >= 80);
+
   return (
-    <div className="page" id="budgets-page">
+    <div className="page" id="budgets-page" onClick={handleGlobalClick}>
       <div className="budget-page-header">
         <div>
           <h1 className="page-title" style={{ marginBottom: '4px' }}>
@@ -87,6 +98,22 @@ export default function Budgets() {
           </div>
         </div>
       </div>
+
+      {alerts.length > 0 && (
+        <div className="reminders-alert-banner" style={{ margin: 'var(--space-4) var(--space-4) 0', padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+          <div className="alert-header" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-danger)', fontSize: '0.8rem', fontWeight: '800', marginBottom: '8px', textTransform: 'uppercase' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            Budget Alerts ({alerts.length})
+          </div>
+          <div className="alerts-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {alerts.map(b => (
+              <div key={b.id} style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>
+                You've used <strong>{Math.round(b.status.percentage)}%</strong> of your <strong>{getCategoryInfo(b.category).name}</strong> budget.
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Overview */}
       <div className="budget-overview card">
@@ -151,8 +178,15 @@ export default function Budgets() {
               tierLabel = `${formatAmount(remaining, currency)} remaining`;
             }
 
+            const isInactive = spent === 0;
+
             return (
-              <div key={b.id} className={`budget-item card ${tierClass}`}>
+              <div key={b.id} className={`budget-item card ${tierClass} ${isInactive ? 'budget-inactive' : ''}`} onClick={() => setSelectedBudgetForTxns(b)}>
+                {b.status?.rollover > 0 && (
+                  <div className="budget-rollover-badge">
+                    +{formatAmount(b.status.rollover, currency)} rolled over from last month
+                  </div>
+                )}
                 <div className="budget-item-header">
                   <div className="budget-item-left">
                     <span className="budget-item-icon" style={{ background: `${cat.color}18` }}>{cat.icon}</span>
@@ -161,11 +195,27 @@ export default function Budgets() {
                       <span className={`budget-pct-badge ${tierClass}`}>{Math.round(pct)}%</span>
                     </div>
                   </div>
-                  <button className="btn-delete-sm" onClick={() => deleteBudget(b.id)}>✕</button>
+                  <div className="budget-more-menu-wrapper" style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                    <button className="budget-more-btn" onClick={() => setMoreMenuId(moreMenuId === b.id ? null : b.id)}>
+                      ⋮
+                    </button>
+                    {moreMenuId === b.id && (
+                      <div className="budget-more-dropdown">
+                        <button onClick={(e) => { e.stopPropagation(); setMoreMenuId(null); openEdit(b); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                          Adjust
+                        </button>
+                        <button className="delete" onClick={(e) => { e.stopPropagation(); deleteBudget(b.id); setMoreMenuId(null); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="budget-item-amounts">
                   <span className={exceeded ? 'budget-spent-over' : ''}>{formatAmount(spent, currency)}</span>
-                  <span className="budget-item-total">/ {formatAmount(b.amount, currency)}</span>
+                  <span className="budget-item-total">/ {formatAmount(b.status?.totalLimit || b.amount, currency)}</span>
                   {!exceeded && <span className="budget-item-remaining">Remaining: {formatAmount(remaining, currency)}</span>}
                 </div>
                 <div className="progress-bar">
@@ -198,12 +248,12 @@ export default function Budgets() {
                   </div>
                 )}
                 
-                <div className="budget-card-actions">
+                <div className="budget-card-actions" onClick={(e) => e.stopPropagation()}>
                   <button className="btn btn-primary btn-sm" onClick={() => navigate(`/add?type=expense&category=${cat.id}`)}>
                     + Add Expense
                   </button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => openEdit(b)}>
-                    Adjust
+                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedBudgetForTxns(b)}>
+                    Transactions
                   </button>
                 </div>
               </div>
@@ -253,10 +303,41 @@ export default function Budgets() {
             </div>
           </div>
           <div className="input-group">
-            <label>Budget Amount</label>
+            <label>Budget Amount (Base)</label>
             <CalculatorInput value={newAmount} onChange={setNewAmount} />
           </div>
-          <button className="btn btn-primary submit-btn" onClick={handleAdd}>Set Budget</button>
+          <button className="btn btn-primary submit-btn" onClick={handleAdd}>{editingId ? "Save Changes" : "Set Budget"}</button>
+        </div>
+      </BottomSheet>
+
+      {/* Linked Transactions Sheet */}
+      <BottomSheet isOpen={!!selectedBudgetForTxns} onClose={() => setSelectedBudgetForTxns(null)} title={`${selectedBudgetForTxns ? getCategoryInfo(selectedBudgetForTxns.category).name : ''} Transactions`}>
+        <div className="budget-transactions-list" style={{ marginTop: '10px' }}>
+          {selectedBudgetForTxns && (() => {
+            const b = selectedBudgetForTxns;
+            const txns = transactions.filter((t) => {
+              if (t.type !== 'expense' || t.category !== b.category) return false;
+              const d = new Date(t.date);
+              const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+              return key === b.month;
+            });
+            if (txns.length === 0) {
+              return <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>No transactions yet.</div>;
+            }
+            return txns.map(t => (
+              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--color-border)' }}>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t.party || t.note || 'Expense'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                    {new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+                <div style={{ fontWeight: '700', fontFamily: 'var(--font-heading)' }}>
+                  {formatAmount(t.amount, currency)}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       </BottomSheet>
     </div>
