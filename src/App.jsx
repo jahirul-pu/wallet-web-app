@@ -14,6 +14,7 @@ import Accounts from './pages/Accounts';
 import Budgets from './pages/Budgets';
 import Debts from './pages/Debts';
 import Analytics from './pages/Analytics';
+import MonthlySummary from './pages/MonthlySummary';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -70,6 +71,7 @@ function AppContent() {
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/debts" element={<Debts />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/monthly" element={<MonthlySummary />} />
             <Route path="/settings" element={<Settings />} />
             
             <Route path="*" element={<Navigate to="/" replace />} />

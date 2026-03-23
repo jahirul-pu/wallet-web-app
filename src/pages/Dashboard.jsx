@@ -664,6 +664,22 @@ export default function Dashboard() {
             </button>
           </div>
 
+          {/* Monthly Rhythm CTA */}
+          <div className="dashboard-section" style={{ animationDelay: '0.3s' }}>
+            <div className="ms-dashboard-cta card" onClick={() => navigate('/monthly')} style={{ cursor: 'pointer', padding: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)', border: '1px solid rgba(99, 102, 241, 0.2)', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(59, 130, 246, 0.06))' }}>
+              <div style={{ fontSize: '1.6rem', flexShrink: 0 }}>📊</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 'var(--text-sm)', marginBottom: '2px' }}>
+                  {new Date().toLocaleString('default', { month: 'long' })} Summary
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                  Review your monthly performance & export report
+                </div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </div>
+
           {/* Analytics Section */}
           <div className="dashboard-section" style={{ animationDelay: '0.35s' }}>
             <div className="dashboard-section-header">

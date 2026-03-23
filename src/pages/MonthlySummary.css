@@ -1,0 +1,470 @@
+/* ── Monthly Summary Page ── */
+#monthly-summary-page {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.ms-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.ms-subtitle {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba(234, 180, 20, 0.1);
+  color: #d97706;
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ms-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+}
+
+/* ── Score Card ── */
+.ms-score-card {
+  padding: var(--space-5) !important;
+  margin-bottom: var(--space-5);
+  background: var(--color-bg-card);
+}
+
+.ms-score-header {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}
+
+.ms-score-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.ms-score-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ms-score-item.highlight {
+  padding: var(--space-3);
+  background: var(--color-bg-input);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+}
+
+.ms-score-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.ms-score-value {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.ms-score-value.income { color: #34d399; }
+.ms-score-value.expense { color: #f43f5e; }
+
+.ms-score-change {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.ms-score-change.positive { color: #34d399; }
+.ms-score-change.negative { color: #f43f5e; }
+
+@media (max-width: 480px) {
+  .ms-score-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Sections ── */
+.ms-section {
+  margin-bottom: var(--space-5);
+}
+
+.ms-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: var(--text-base);
+  font-weight: 700;
+  margin-bottom: var(--space-3);
+  color: var(--color-text-primary);
+}
+
+/* ── Wallet Growth ── */
+.ms-wallet-growth {
+  padding: var(--space-4) !important;
+}
+
+.ms-wallet-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.ms-wallet-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ms-wallet-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ms-wallet-value {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--color-text-primary);
+}
+
+.ms-wallet-value.positive { color: #34d399; }
+.ms-wallet-value.negative { color: #f43f5e; }
+
+.ms-wallet-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ms-wallet-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.ms-wallet-bar-track {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ms-wallet-bar-prev, .ms-wallet-bar-curr {
+  height: 8px;
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ms-wallet-bar-prev {
+  background: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+.ms-wallet-bar-curr.positive { background: #34d399; }
+.ms-wallet-bar-curr.negative { background: #f43f5e; }
+
+/* ── Budget Summary ── */
+.ms-budget-summary {
+  padding: var(--space-4) !important;
+}
+
+.ms-budget-overview-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.ms-budget-stat {
+  text-align: center;
+}
+
+.ms-budget-stat-val {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+}
+
+.ms-budget-stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.ms-budget-alert {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.ms-budget-alert.danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.ms-budget-alert.warning {
+  background: rgba(234, 180, 20, 0.1);
+  color: #d97706;
+}
+
+.ms-empty-note {
+  text-align: center;
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.ms-link-btn {
+  width: 100%;
+  margin-top: var(--space-3);
+  text-align: center;
+}
+
+/* ── Debt Summary ── */
+.ms-debt-summary {
+  padding: var(--space-4) !important;
+}
+
+.ms-debt-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.ms-debt-stat-item {
+  text-align: center;
+}
+
+.ms-debt-stat-val {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+}
+
+.ms-debt-stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.ms-debt-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+.ms-debt-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ms-debt-timeline-item:last-child {
+  border-bottom: none;
+}
+
+.ms-debt-timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: #34d399;
+  flex-shrink: 0;
+}
+
+.ms-debt-timeline-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ms-debt-timeline-person {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.ms-debt-timeline-note {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.ms-debt-timeline-amount {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+/* ── Top Categories ── */
+.ms-categories {
+  padding: var(--space-4) !important;
+}
+
+.ms-category-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ms-category-row:last-child {
+  border-bottom: none;
+}
+
+.ms-category-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ms-category-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ms-category-name {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  margin-bottom: 4px;
+}
+
+.ms-category-bar-track {
+  height: 4px;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.ms-category-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ms-category-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ms-category-amount {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: var(--text-sm);
+}
+
+.ms-category-pct {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* ── Reset Banner ── */
+.ms-reset-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(59, 130, 246, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  margin-bottom: var(--space-5);
+}
+
+.ms-reset-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.ms-reset-text {
+  flex: 1;
+}
+
+.ms-reset-title {
+  font-weight: 800;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.ms-reset-sub {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Stats Footer ── */
+.ms-stats-footer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-4);
+}
+
+.ms-footer-stat {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ms-footer-val {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+}
+
+.ms-footer-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
