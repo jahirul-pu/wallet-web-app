@@ -66,3 +66,44 @@ export const exportCSV = (transactions, getCategoryInfo, formatAmount, currency)
   a.click();
   URL.revokeObjectURL(url);
 };
+
+export const exportPDF = async (transactions, getCategoryInfo, formatAmount, currency) => {
+  const { jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
+
+  const doc = new jsPDF();
+  const dateStr = new Date().toISOString().split('T')[0];
+
+  doc.setFontSize(18);
+  doc.text('Transaction Report', 14, 22);
+  doc.setFontSize(11);
+  doc.setTextColor(100);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+  
+  const headers = [
+    ['Date', 'Type', 'Category', 'Amount', 'Note', 'Wallet']
+  ];
+
+  const data = transactions.map((t) => {
+    const cat = getCategoryInfo(t.category);
+    return [
+      t.date,
+      t.type.charAt(0).toUpperCase() + t.type.slice(1),
+      cat.name,
+      formatAmount(t.amount, currency),
+      t.note || '',
+      t.accountId || 'Vault'
+    ];
+  });
+
+  autoTable(doc, {
+    head: headers,
+    body: data,
+    startY: 35,
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [99, 102, 241], textColor: 255 }, // matches --color-accent
+    alternateRowStyles: { fillColor: [249, 250, 251] },
+  });
+
+  doc.save(`wallet-transactions-${dateStr}.pdf`);
+};

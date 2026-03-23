@@ -7,7 +7,9 @@ import { useBudgetStore } from '../stores/useBudgetStore';
 import { useDebtStore } from '../stores/useDebtStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { CURRENCIES, searchCurrencies, getCurrency } from '../utils/currencies';
-import { exportData, importData } from '../utils/exportImport';
+import { exportData, importData, exportPDF } from '../utils/exportImport';
+import { getCategoryInfo } from '../utils/categories';
+import { formatAmount } from '../utils/currencies';
 import { isConfigured } from '../services/firebase';
 import BottomSheet from '../components/BottomSheet';
 import './Settings.css';
@@ -103,6 +105,10 @@ export default function Settings() {
     recalculateBalances(transactions);
     setRepairStatus('✅ Wallet balances repaired!');
     setTimeout(() => setRepairStatus(''), 3000);
+  };
+
+  const handleExportPDF = () => {
+    exportPDF(transactions, getCategoryInfo, formatAmount, currency);
   };
 
   return (
@@ -247,15 +253,29 @@ export default function Settings() {
         {/* Data Section */}
         <div className="settings-section-label">Data</div>
 
-        {/* Export */}
-        <div className="settings-item card" onClick={handleExport} id="export-btn">
+        {/* Export JSON */}
+        <div className="settings-item card" onClick={handleExport} id="export-json-btn">
           <div className="settings-item-left">
             <span className="settings-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             </span>
             <div>
-              <div className="settings-item-title">Export Data</div>
-              <div className="settings-item-desc">Download JSON backup</div>
+              <div className="settings-item-title">Backup as JSON</div>
+              <div className="settings-item-desc">Full app data for restore</div>
+            </div>
+          </div>
+          <span className="settings-arrow">›</span>
+        </div>
+
+        {/* Export PDF */}
+        <div className="settings-item card" onClick={handleExportPDF} id="export-pdf-btn">
+          <div className="settings-item-left">
+            <span className="settings-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </span>
+            <div>
+              <div className="settings-item-title">Export as PDF</div>
+              <div className="settings-item-desc">Download transaction report</div>
             </div>
           </div>
           <span className="settings-arrow">›</span>
