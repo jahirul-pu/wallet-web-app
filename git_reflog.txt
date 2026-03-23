@@ -1,0 +1,72 @@
+fd5edf8 HEAD@{0}: commit: Fix remaining merge conflicts in Dashboard
+2d3a1e7 HEAD@{1}: commit: Fix duplicate declaration of accounts in TransactionItem
+78fc30a HEAD@{2}: rebase (finish): returning to refs/heads/web-ui-optimization
+78fc30a HEAD@{3}: rebase (continue): Fix balance calculation logic, adjust dropdown formatting, and fix timezone offset for days ago label
+2408ac4 HEAD@{4}: commit: Fix balances in dropdown/sidebar, Dashboard vault sync, timezone offset clamp
+d208a68 HEAD@{5}: rebase (start): checkout origin/master
+491ad73 HEAD@{6}: commit: Fix balance calculation logic, adjust dropdown formatting, and fix timezone offset for days ago label
+55db4bc HEAD@{7}: checkout: moving from revert-point to web-ui-optimization
+55db4bc HEAD@{8}: reset: moving to 55db4bc
+56f02c0 HEAD@{9}: checkout: moving from master to revert-point
+d208a68 HEAD@{10}: reset: moving to HEAD
+d208a68 HEAD@{11}: commit: fix(mobile): Restore scaled desktop grid for dashboard while optimizing other pages
+e866537 HEAD@{12}: commit: Fix useEffect import and strict port config
+4d60fdd HEAD@{13}: commit: Add PDF export, optimize centered modal UI, and integrate monthly summary into mobile navigation
+f3ae9ad HEAD@{14}: commit: style: Upscaled global typography tokens for responsive desktop layouts.
+56f02c0 HEAD@{15}: commit: feat: Optimized UI for desktop rendering with robust CSS Grid and multi-column distribution layouts.
+55db4bc HEAD@{16}: commit: feat: Added robust two-way delete synchronization between Transactions and Debts modules; injected Asset Purchase, Fuel, and Maintenance categories.
+e1d9d15 HEAD@{17}: commit: Implemented unified Installment/EMI system in Debts module with automatic schedule projection, variable principal splits, and extra interest sum tracker.
+3b27785 HEAD@{18}: commit: Redesigned Analytics page with smart insights, deep spending lists, month verdicts, budgeting warnings, and a premium debt pulse UI.
+67bc286 HEAD@{19}: commit: Modernized analytics with smoothed SVG curves and vibrant category colors. Fixed critical timezone bug in 'Today' calculations and Debt settlement.
+c0dda8c HEAD@{20}: commit: Enhance Dashboard Analytics: Fix donut chart overlap, add contextual subtitles to summary cards, and implement Today's Breakdown with prioritized status cards
+83604e9 HEAD@{21}: commit: Implement platform-wide privacy modes, Today's Pulse dashboard layer, and fix analytical CSS/category issues
+f7d5fd9 HEAD@{22}: commit: feat: add Monthly Summary page with full monthly rhythm system
+1d4014f HEAD@{23}: commit: fix: add missing analytics section CSS to Dashboard
+9cd23b9 HEAD@{24}: commit: feat: automatically record debt settlement in payment timeline
+5155a73 HEAD@{25}: commit: feat: upgrade Budgets with alerts, rollover, linked transactions, and safety
+aa159ce HEAD@{26}: commit: feat: upgrade Budgets with Actionability, Daily Guidance, and Insights
+1363fd8 HEAD@{27}: commit: feat: upgrade budget urgency tiers and add context text
+18f3860 HEAD@{28}: commit: feat: upgrade Debts UI with Summary Insight, Sort bar, safer actions, and creation dates
+70d22a7 HEAD@{29}: commit: feat: upgrade debt urgency, add payment timeline & reminder system
+0dcef03 HEAD@{30}: commit: feat: replace delete btn with 3-dot menu, add hide balance toggle & mini activity preview
+ec269ca HEAD@{31}: commit: style: elevate active wallets, fade zero-balance wallets
+81d4ede HEAD@{32}: commit: feat: wallet page enhancements - distribution view, default wallet, inactive grouping
+92c1c36 HEAD@{33}: commit: feat: enhance wallet page - net worth context, live wallet cards, quick actions
+b953927 HEAD@{34}: commit: fix: corrected running balance calculation with strict chronological sorting by createdAt
+0bbdd2d HEAD@{35}: commit: feat: implemented intelligence bar, enhanced category color unification, visual polish with soft shadows and mesh gradients, and advanced empty states
+66969a3 HEAD@{36}: commit: feat: implemented advanced tx filtering, daily net totals, isolated transaction cards, actionable UI overlay (Edit, Duplicate, Clear), and fixed state updating logic
+d92de6a HEAD@{37}: commit: feat: transactional list structural overhaul, running balance logic, timezone fixes, and allowance
+143521f HEAD@{38}: commit: feat: smart category predictive engines and mfs purge
+4410452 HEAD@{39}: commit: feat: visual system upgrade and real analytics
+d855004 HEAD@{40}: commit: Add financial overview cards with sparklines and smart insights engine
+e5e5f30 HEAD@{41}: commit: Add live status layer: balance preview, monthly net flow, badges, and notification dots
+5141a85 HEAD@{42}: commit: Add collapsible sidebar with tooltips, typography upgrade, and depth color system
+cdc038a HEAD@{43}: commit: Upgrade sidebar footer to system tray with labels and reduced opacity
+a6ef254 HEAD@{44}: commit: Sidebar UI upgrade: navigation grouping, live active state, and duotone icons
+6acfe46 HEAD@{45}: commit: Add Purrfect Finance logo to sidebar
+15d4e9e HEAD@{46}: commit: feat: add mobile banking categories (bKash, Nagad, Rocket, Upay)
+2207e01 HEAD@{47}: commit: feat: add wallet tagging (income/expense/both) and filter dropdowns
+e31f398 HEAD@{48}: commit: feat: add salary month field specifically for salary category
+faea7c1 HEAD@{49}: commit: feat: move analytics section to the bottom of dashboard
+ddf8794 HEAD@{50}: commit: layout: align dashboard header with content grid for better padding consistency
+31301da HEAD@{51}: commit: style: add border to settings icon button for symmetry
+33f4970 HEAD@{52}: commit: style: soften color intensity of income and expense buttons
+1535bcd HEAD@{53}: commit: feat: add quick-add transaction on dashboard and wallet linking for loans
+7db2dcd HEAD@{54}: commit: style: center the dashboard layout after removing side widgets
+8f715c2 HEAD@{55}: commit: feat: simplify dashboard by removing placeholder widgets and chart
+53f57ae HEAD@{56}: commit: fix: sync wallet balances on delete and add Repair Data tool
+92ac150 HEAD@{57}: commit: chore: remove sensitive google-services.json and update .gitignore
+9935bb5 HEAD@{58}: commit: feat: add wallet balances to dashboard and unify account icons
+89ebf08 HEAD@{59}: commit: feat: complete Debts page improvements, Purrfect Finance branding update, editable partial settlements, and settled debt deletion
+6cfa1ea HEAD@{60}: commit: feat: custom modern DatePicker component replacing native date inputs with dd/mm/yyyy format
+a94c3bf HEAD@{61}: commit: feat: redesign calculator input to be a minimalistic floating popup widget, integrate native typing, correctly forbid non-math characters
+e9637e8 HEAD@{62}: commit: feat: custom account dropdown with icons, add salary category, hide number input spinners
+2481362 HEAD@{63}: commit: fix: blank page on refresh — update Firebase persistence API & switch SW to network-first
+b89b777 HEAD@{64}: commit: style: force all neon text/numbers to absolute black (#000000) in Light Mode and updated default account colors
+d51bf84 HEAD@{65}: commit: style: replace all neon emerald accents and texts with deep slate (#0F172A) strictly in light mode for better readability
+7bb05b8 HEAD@{66}: commit: feat(accounts): added edit, delete, and rearrange capabilities to all wallets & forced English numerals for all currencies
+c258a14 HEAD@{67}: commit: style(desktop): redesign BalanceCard as VaultAssetsCard and TransactionItems as flex-grid data rows for web container
+e2ab053 HEAD@{68}: commit: feat(desktop): implement Lumina responsive desktop dashboard with persistent Sidebar, TopNav, and grid layout
+4568467 HEAD@{69}: commit: style: replace all remaining emojis with Minimal Vault line-art SVGs
+fe66030 HEAD@{70}: commit: feat: apply Lumina Finance / Digital Vault design theme
+c3e7c23 HEAD@{71}: commit (initial): Initial commit of Wallet Web App (Phase 1-5)

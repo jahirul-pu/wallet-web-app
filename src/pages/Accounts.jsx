@@ -165,22 +165,33 @@ export default function Accounts() {
       );
       const count = accTxns.length;
 
-      let lastDate = null;
+      let lastDateStr = null;
       accTxns.forEach((t) => {
-        const d = new Date(t.date);
-        if (!lastDate || d > lastDate) lastDate = d;
+        if (!lastDateStr || t.date > lastDateStr) lastDateStr = t.date;
       });
 
       let lastUsedLabel = 'Never';
       let daysAgo = Infinity;
-      if (lastDate) {
-        const diffMs = now - lastDate;
+      if (lastDateStr) {
+        // Safe local parsing avoiding UTC offset leap
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+        
+        const [y1, m1, d1] = todayStr.split('-').map(Number);
+        const [y2, m2, d2] = lastDateStr.split('-').map(Number);
+        
+        const localNow = new Date(y1, m1 - 1, d1);
+        const localLast = new Date(y2, m2 - 1, d2);
+        
+        const diffMs = localNow - localLast;
         daysAgo = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
         if (daysAgo === 0) lastUsedLabel = 'Today';
         else if (daysAgo === 1) lastUsedLabel = 'Yesterday';
-        else if (daysAgo < 30) lastUsedLabel = `${daysAgo}d ago`;
-        else if (daysAgo < 365) lastUsedLabel = `${Math.floor(daysAgo / 30)}mo ago`;
-        else lastUsedLabel = `${Math.floor(daysAgo / 365)}y ago`;
+        else if (daysAgo === -1) lastUsedLabel = 'Tomorrow';
+        else if (daysAgo > 1 && daysAgo < 30) lastUsedLabel = `${daysAgo}d ago`;
+        else if (daysAgo >= 30 && daysAgo < 365) lastUsedLabel = `${Math.floor(daysAgo / 30)}mo ago`;
+        else if (daysAgo >= 365) lastUsedLabel = `${Math.floor(daysAgo / 365)}y ago`;
+        else lastUsedLabel = 'Future';
       }
 
       // active = used in last 7 days, recent = last 30 days, inactive = else
