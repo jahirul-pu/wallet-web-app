@@ -789,7 +789,7 @@ export default function Dashboard() {
           {/* Monthly Rhythm CTA */}
           <div className="dashboard-section" style={{ animationDelay: '0.3s' }}>
             <div className="ms-dashboard-cta card" onClick={() => navigate('/monthly')} style={{ cursor: 'pointer', padding: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)', border: '1px solid rgba(99, 102, 241, 0.2)', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(59, 130, 246, 0.06))' }}>
-              <div style={{ fontSize: '1.6rem', flexShrink: 0 }}>📊</div>
+              <div style={{ fontSize: '1.6rem', flexShrink: 0, color: 'var(--color-primary)', display: 'flex', alignItems: 'center' }}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 'var(--text-sm)', marginBottom: '2px' }}>
                   {new Date().toLocaleString('default', { month: 'long' })} Summary
@@ -826,7 +826,7 @@ export default function Dashboard() {
                </div>
                <div className="summary-bullets">
                   <div className="summary-bullet">
-                    <span className="bullet-icon">📊</span>
+                    <span className="bullet-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>
                     <span className="bullet-text">
                        {analytics.totalExpenseAmt > 0 ? (
                          <>You spent most on <strong>{analytics.topCategory?.name}</strong> ({analytics.topCategory?.percent}%)</>
@@ -834,7 +834,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div className="summary-bullet">
-                    <span className="bullet-icon">📈</span>
+                    <span className="bullet-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
                     <span className="bullet-text">
                        {analyticsPeriod === 'month' && (
                          <>Spending <strong>{pctChange(analytics.totalExpenseAmt, prevMonth.expense) > 0 ? 'increased' : 'decreased'}</strong> vs last month</>
@@ -844,7 +844,7 @@ export default function Dashboard() {
                   </div>
                   {analytics.biggestTxn && (
                     <div className="summary-bullet clickable" onClick={() => navigate('/transactions')}>
-                      <span className="bullet-icon">💰</span>
+                      <span className="bullet-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
                       <span className="bullet-text">Biggest single expense: <strong><AnimatedAmount value={analytics.biggestTxn.amount} currency={currency} /></strong> ({analytics.biggestTxn.note || 'Lent/Expense'})</span>
                     </div>
                   )}
