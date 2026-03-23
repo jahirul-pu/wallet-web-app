@@ -40,7 +40,7 @@ export default function AddTransaction() {
     return accounts.filter((a) => !a.type || a.type === 'all' || a.type === type);
   }, [accounts, type]);
 
-  const [accountId, setAccountId] = useState(editTxn ? editTxn.accountId : (filteredAccounts[0]?.id || ''));
+  const [accountId, setAccountId] = useState(editTxn ? editTxn.accountId : (searchParams.get('account') || filteredAccounts[0]?.id || ''));
   const [toAccountId, setToAccountId] = useState(editTxn && editTxn.type === 'transfer' ? editTxn.toAccountId : (accounts[1]?.id || ''));
 
   // Keep selected account valid when switching types (skip if editing to prevent override loops)
