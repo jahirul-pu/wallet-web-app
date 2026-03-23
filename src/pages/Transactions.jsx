@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTransactionStore } from '../stores/useTransactionStore';
+import { useDebtStore } from '../stores/useDebtStore';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getIncomeCategories, getExpenseCategories } from '../utils/categories';
@@ -18,6 +19,10 @@ export default function Transactions() {
   const navigate = useNavigate();
   const { mask } = usePrivacy();
 
+  const debts = useDebtStore((s) => s.debts);
+  const deleteDebt = useDebtStore((s) => s.deleteDebt);
+  const deletePayment = useDebtStore((s) => s.deletePayment);
+
   const handleDelete = (id) => {
     const txn = transactions.find(t => t.id === id);
     if (!txn) return;
@@ -27,6 +32,16 @@ export default function Transactions() {
     } else {
       const reverseType = txn.type === 'income' ? 'expense' : 'income';
       adjustBalance(txn.accountId, txn.amount, reverseType);
+    }
+
+    const linkedDebt = debts.find(d => d.linkedTransactionId === id);
+    if (linkedDebt) {
+       deleteDebt(linkedDebt.id);
+    } else {
+       debts.forEach(d => {
+          const linkedPayment = d.payments?.find(p => p.linkedTransactionId === id);
+          if (linkedPayment) deletePayment(d.id, linkedPayment.id);
+       });
     }
 
     deleteTransaction(id);

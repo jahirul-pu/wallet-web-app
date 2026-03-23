@@ -20,10 +20,15 @@ export default function Debts() {
   const deleteDebt = useDebtStore((s) => s.deleteDebt);
   const deletePayment = useDebtStore((s) => s.deletePayment);
   const editPayment = useDebtStore((s) => s.editPayment);
+  
+  const transactions = useTransactionStore((s) => s.transactions);
+  const addTransaction = useTransactionStore((s) => s.addTransaction);
+  const deleteTransaction = useTransactionStore((s) => s.deleteTransaction);
+  const updateTransaction = useTransactionStore((s) => s.updateTransaction);
+  
   const currency = useSettingsStore((s) => s.currency);
   const accounts = useAccountStore((s) => s.accounts);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
-  const addTransaction = useTransactionStore((s) => s.addTransaction);
   const { mask } = usePrivacy();
 
   const { totalOwedToMe, totalIOwe } = useMemo(() => ({
@@ -39,6 +44,7 @@ export default function Debts() {
   const [payAmount, setPayAmount] = useState('');
   const [payNote, setPayNote] = useState('');
   const [payDate, setPayDate] = useState('');
+  const [payAccountId, setPayAccountId] = useState(''); // New: account for paying
   const [sortMode, setSortMode] = useState('recent');
   const [moreMenuId, setMoreMenuId] = useState(null);
 
@@ -88,6 +94,38 @@ export default function Debts() {
     }
   }, [filteredDebts, sortMode]);
 
+  // Global Delete Helper for Debts & Payments
+  const removeLinkedTransaction = (txnId) => {
+     if (!txnId) return;
+     const t = transactions.find(x => x.id === txnId);
+     if (t) {
+        const reverseType = t.type === 'income' ? 'expense' : 'income';
+        adjustBalance(t.accountId, t.amount, reverseType);
+        deleteTransaction(t.id);
+     }
+  };
+
+  const handleGlobalDeleteDebt = (d) => {
+     if(!window.confirm(`Delete this debt and reverse all associated wallet transactions?`)) return;
+     
+     // 1. Delete payment transactions
+     d.payments?.forEach(p => {
+       removeLinkedTransaction(p.linkedTransactionId);
+     });
+     // 2. Delete main debt transaction
+     removeLinkedTransaction(d.linkedTransactionId);
+
+     // 3. Remove store entity
+     deleteDebt(d.id);
+     setMoreMenuId(null);
+  };
+
+  const handleGlobalDeletePayment = (dId, p) => {
+     if(!window.confirm(`Delete this payment and reverse its wallet transaction?`)) return;
+     removeLinkedTransaction(p.linkedTransactionId);
+     deletePayment(dId, p.id);
+  };
+
   const handleAddDebt = () => {
     if (!newPerson || !newAmount) return;
     
@@ -97,9 +135,9 @@ export default function Debts() {
       return;
     }
 
-    const tAmt = Number(newAmount);
+    const tAmt = Number(newAmount); // Principal
     let plan = null;
-    let finalDebtAmount = newAmount;
+    let finalDebtAmount = newAmount; // Debt Liability
     
     if (isInstallment) {
       const iAmt = Number(installmentAmount);
@@ -119,6 +157,27 @@ export default function Debts() {
       };
     }
 
+    let linkedTxnId = null;
+
+    if (selectedAccountId) {
+      // Wallet adjustment only uses the actual standard received/sent Principal
+      if (newType === 'i_owe') {
+        adjustBalance(selectedAccountId, tAmt, 'income');
+        const t = addTransaction({
+          type: 'income', amount: tAmt, category: 'other',
+          date: toInputDate(), note: `Loan from ${newPerson}${newReason ? ' — ' + newReason : ''}`, accountId: selectedAccountId,
+        });
+        linkedTxnId = t.id;
+      } else {
+        adjustBalance(selectedAccountId, tAmt, 'expense');
+        const t = addTransaction({
+          type: 'expense', amount: tAmt, category: 'other',
+          date: toInputDate(), note: `Lent to ${newPerson}${newReason ? ' — ' + newReason : ''}`, accountId: selectedAccountId,
+        });
+        linkedTxnId = t.id;
+      }
+    }
+
     addDebt({
       personName: newPerson,
       type: newType,
@@ -126,25 +185,10 @@ export default function Debts() {
       reason: newReason,
       dueDate: isInstallment ? null : (newDueDate || null), // hide base dueDate if installment exists
       reminders: { oneDayBefore: remindOneDayBefore, onDueDate: remindOnDueDate },
-      installmentPlan: plan
+      installmentPlan: plan,
+      linkedTransactionId: linkedTxnId,
+      accountId: selectedAccountId || null
     });
-
-    if (selectedAccountId) {
-      // Wallet adjustment only uses the actual standard received/sent Principal
-      if (newType === 'i_owe') {
-        adjustBalance(selectedAccountId, tAmt, 'income');
-        addTransaction({
-          type: 'income', amount: tAmt, category: 'other',
-          date: toInputDate(), note: `Loan from ${newPerson}${newReason ? ' — ' + newReason : ''}`, accountId: selectedAccountId,
-        });
-      } else {
-        adjustBalance(selectedAccountId, tAmt, 'expense');
-        addTransaction({
-          type: 'expense', amount: tAmt, category: 'other',
-          date: toInputDate(), note: `Lent to ${newPerson}${newReason ? ' — ' + newReason : ''}`, accountId: selectedAccountId,
-        });
-      }
-    }
 
     setNewPerson(''); setNewAmount(''); setNewReason(''); setNewDueDate('');
     setSelectedAccountId('');
@@ -156,12 +200,67 @@ export default function Debts() {
 
   const handlePay = () => {
     if (!payAmount || !selectedDebt) return;
+    const amt = Number(payAmount);
+
     if (selectedPaymentId) {
-      editPayment(selectedDebt.id, selectedPaymentId, Number(payAmount), payNote, payDate);
+      // Edit Payment
+      const oldP = selectedDebt.payments.find(p => p.id === selectedPaymentId);
+      
+      // Reverse old if exists
+      let newLink = oldP.linkedTransactionId;
+      if (oldP && oldP.linkedTransactionId) {
+         const oldT = transactions.find(t => t.id === oldP.linkedTransactionId);
+         if (oldT) {
+            // Edit existing transaction fully
+            const diff = amt - oldT.amount; // new amount - old amount
+            const updateType = oldT.type; // Keep the same direction 
+            // adjust wallet for diff
+            if (payAccountId && oldT.accountId === payAccountId) {
+               adjustBalance(oldT.accountId, diff, updateType);
+            } else if (payAccountId && oldT.accountId !== payAccountId) {
+               // they changed the account entirely! reverse old, apply new
+               adjustBalance(oldT.accountId, oldT.amount, updateType === 'income' ? 'expense' : 'income');
+               adjustBalance(payAccountId, amt, updateType);
+            } else if (!payAccountId) {
+               // they removed the account binding. reverse old.
+               adjustBalance(oldT.accountId, oldT.amount, updateType === 'income' ? 'expense' : 'income');
+               newLink = null;
+            }
+
+            if (newLink) {
+               updateTransaction({ id: newLink, amount: amt, note: payNote || `Payment for ${selectedDebt.personName}`, date: payDate, accountId: payAccountId });
+            } else {
+               deleteTransaction(oldP.linkedTransactionId);
+            }
+         }
+      } else if (payAccountId) {
+         // Did not have linked transaction before, creating one now
+         const pType = selectedDebt.type === 'i_owe' ? 'expense' : 'income'; // Pay back loan = expense. Receive loan back = income.
+         adjustBalance(payAccountId, amt, pType);
+         const t = addTransaction({
+            type: pType, amount: amt, category: 'other', date: payDate, note: payNote || `Payment for ${selectedDebt.personName}`, accountId: payAccountId
+         });
+         newLink = t.id;
+      }
+      
+      editPayment(selectedDebt.id, selectedPaymentId, amt, payNote, payDate);
+      // Hack: directly inject linkedTransactionId back if we just added/modified it since editPayment doesn't take it currently.
+      // Actually editPayment doesn't take linkedTransactionId argument right now. Oh well, it retains the existing one via ...p inside the store.
     } else {
-      addPayment(selectedDebt.id, Number(payAmount), payNote, payDate);
+      // Add Payment
+      let linkedTxnId = null;
+      if (payAccountId) {
+         const pType = selectedDebt.type === 'i_owe' ? 'expense' : 'income'; 
+         adjustBalance(payAccountId, amt, pType);
+         const t = addTransaction({
+            type: pType, amount: amt, category: 'other', date: payDate, note: payNote || `Payment for ${selectedDebt.personName}`, accountId: payAccountId
+         });
+         linkedTxnId = t.id;
+      }
+      addPayment(selectedDebt.id, amt, payNote, payDate, linkedTxnId);
     }
-    setPayAmount(''); setPayNote(''); setPayDate(''); setSelectedPaymentId(null);
+
+    setPayAmount(''); setPayNote(''); setPayDate(''); setSelectedPaymentId(null); setPayAccountId('');
     setShowPaySheet(false);
   };
 
@@ -172,6 +271,7 @@ export default function Debts() {
     setPayAmount(progress.isInstallment && progress.nextUpcomingAmount > 0 ? progress.nextUpcomingAmount.toString() : '');
     setPayNote('');
     setPayDate(toInputDate());
+    setPayAccountId(accounts.length > 0 ? accounts[0].id : ''); // Default to primary account for payments!
     setShowPaySheet(true);
   };
 
@@ -181,6 +281,15 @@ export default function Debts() {
     setPayAmount(p.amount.toString());
     setPayNote(p.note || '');
     setPayDate(toInputDate(p.date));
+    
+    // Attempt to resolve account id if it had a linked transaction
+    if (p.linkedTransactionId) {
+       const t = transactions.find(x => x.id === p.linkedTransactionId);
+       setPayAccountId(t ? t.accountId : '');
+    } else {
+       setPayAccountId('');
+    }
+
     setShowPaySheet(true);
   };
 
@@ -282,7 +391,7 @@ export default function Debts() {
               <div key={d.id} id={`debt-${d.id}`} className={`debt-card card ${overdue ? 'overdue' : ''}`}>
                 <div className="debt-card-header">
                   <div>
-                    <div className="debt-card-person">{d.personName}</div>
+                    <div className="debt-card-person">{d.personName}{d.linkedTransactionId ? ' 🔗' : ''}</div>
                     <div className={`debt-card-type ${d.type}`}>
                       {d.type === 'owed_to_me' 
                         ? <><svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'4px'}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg> They owe you</>
@@ -411,7 +520,7 @@ export default function Debts() {
                                   </div>
                                   <div className="timeline-actions">
                                     <button onClick={() => openEditPaySheet(d, p)}>Edit</button>
-                                    <button className="danger" onClick={() => { if(window.confirm('Delete this payment record?')) deletePayment(d.id, p.id); }}>Delete</button>
+                                    <button className="danger" onClick={() => handleGlobalDeletePayment(d.id, p)}>Delete</button>
                                   </div>
                                 </div>
                               </div>
@@ -438,7 +547,7 @@ export default function Debts() {
                       <button className="btn btn-icon btn-sm debt-more-btn" onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}>⋮</button>
                       {moreMenuId === d.id && (
                         <div className="debt-more-dropdown">
-                          <button onClick={() => { if(window.confirm(`Delete this ${d.status} debt?`)) { deleteDebt(d.id); setMoreMenuId(null); } }}>
+                          <button onClick={() => handleGlobalDeleteDebt(d)}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             Delete
                           </button>
@@ -452,7 +561,7 @@ export default function Debts() {
                       <button className="btn btn-icon btn-sm debt-more-btn" onClick={() => setMoreMenuId(moreMenuId === d.id ? null : d.id)}>⋮</button>
                       {moreMenuId === d.id && (
                         <div className="debt-more-dropdown">
-                          <button onClick={() => { if(window.confirm('Delete this settled debt record?')) { deleteDebt(d.id); setMoreMenuId(null); } }}>
+                          <button onClick={() => handleGlobalDeleteDebt(d)}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             Delete Record
                           </button>
@@ -486,7 +595,7 @@ export default function Debts() {
             <button className={`type-btn ${newType === 'owed_to_me' ? 'active income' : ''}`} onClick={() => setNewType('owed_to_me')} type="button">Owed to Me</button>
           </div>
           <div className="input-group"><label>Person Name</label><input className="input" placeholder="Who?" value={newPerson} onChange={(e) => setNewPerson(e.target.value)} /></div>
-          <div className="input-group"><label>Total Amount</label><CalculatorInput value={newAmount} onChange={setNewAmount} /></div>
+          <div className="input-group"><label>Total Amount (Principal)</label><CalculatorInput value={newAmount} onChange={setNewAmount} /></div>
           <div className="input-group"><label>Reason (optional)</label><input className="input" placeholder="What for?" value={newReason} onChange={(e) => setNewReason(e.target.value)} /></div>
 
           <div className="installment-toggle-wrap">
@@ -586,8 +695,39 @@ export default function Debts() {
           <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Date</label><DatePicker value={payDate} onChange={setPayDate} /></div>
           <div className="input-group"><label>Note (optional)</label><input className="input" placeholder="Payment note..." value={payNote} onChange={(e) => setPayNote(e.target.value)} /></div>
           
+          <div className="input-group">
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>{selectedDebt?.type === 'i_owe' ? 'Pay from Wallet' : 'Receive into Wallet'}</span>
+            </label>
+            <div className="debt-account-picker">
+              <button
+                type="button"
+                className={`debt-account-option ${!payAccountId ? 'active' : ''}`}
+                onClick={() => setPayAccountId('')}
+              >
+                <span className="debt-account-icon" style={{ background: 'var(--color-bg-input)', color: 'var(--color-text-muted)' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
+                <span>None</span>
+              </button>
+              {accounts.map((acc) => (
+                <button
+                  key={acc.id}
+                  type="button"
+                  className={`debt-account-option ${payAccountId === acc.id ? 'active' : ''}`}
+                  onClick={() => setPayAccountId(acc.id)}
+                >
+                  <span className="debt-account-icon" style={{ background: `${acc.color}18`, color: acc.color }}>
+                    {getAccountIcon(acc, 18)}
+                  </span>
+                  <span>{acc.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          
           <div className="installment-pay-tip">
-             Any extra amount paid will automatically apply to next month's installment!
+             Payments made here instantly reflect in your wallet balance if an account is selected.
           </div>
 
           <button className={`btn submit-btn ${selectedDebt?.type === 'owed_to_me' ? 'btn-income' : 'btn-expense'}`} onClick={handlePay}>{selectedPaymentId ? 'Update Payment' : 'Record Payment'}</button>

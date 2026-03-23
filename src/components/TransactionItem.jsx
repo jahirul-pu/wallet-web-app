@@ -6,6 +6,7 @@ import { formatDate } from '../utils/dateFormat';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useAccountStore } from '../stores/useAccountStore';
+import { useDebtStore } from '../stores/useDebtStore';
 import './TransactionItem.css';
 
 export default function TransactionItem({ transaction, onDelete, onClick }) {
@@ -16,6 +17,9 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
   const updateTransaction = useTransactionStore((s) => s.updateTransaction);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const transfer = useAccountStore((s) => s.transfer);
+  const debts = useDebtStore((s) => s.debts);
+  const deleteDebt = useDebtStore((s) => s.deleteDebt);
+  const deletePayment = useDebtStore((s) => s.deletePayment);
   const { mask } = usePrivacy();
   const cat = getCategoryInfo(transaction.category);
   const isIncome = transaction.type === 'income';
@@ -39,6 +43,18 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
       const reverseType = transaction.type === 'income' ? 'expense' : 'income';
       adjustBalance(transaction.accountId, transaction.amount, reverseType);
     }
+
+    // 2-Way Debt Sync
+    const linkedDebt = debts.find(d => d.linkedTransactionId === transaction.id);
+    if (linkedDebt) {
+       deleteDebt(linkedDebt.id);
+    } else {
+       debts.forEach(d => {
+          const linkedPayment = d.payments?.find(p => p.linkedTransactionId === transaction.id);
+          if (linkedPayment) deletePayment(d.id, linkedPayment.id);
+       });
+    }
+
     deleteTransaction(transaction.id);
   };
 

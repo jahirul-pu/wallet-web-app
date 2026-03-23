@@ -32,6 +32,8 @@ export const useDebtStore = create(
           payments: [],
           reminders: data.reminders || { oneDayBefore: true, onDueDate: true },
           installmentPlan: data.installmentPlan || null,
+          linkedTransactionId: data.linkedTransactionId || null,
+          accountId: data.accountId || null,
           createdAt: getLocalToday(),
         };
         set((state) => ({
@@ -40,7 +42,7 @@ export const useDebtStore = create(
         return debt;
       },
 
-      addPayment: (debtId, amount, note = '', dateStr = null) => {
+      addPayment: (debtId, amount, note = '', dateStr = null, linkedTransactionId = null) => {
         const amt = Number(amount);
         set((state) => ({
           debts: state.debts.map((d) => {
@@ -51,6 +53,7 @@ export const useDebtStore = create(
               amount: amt,
               note,
               date: dateStr ? dateStr.split('T')[0] : getLocalToday(),
+              linkedTransactionId: linkedTransactionId || null,
             };
             return {
               ...d,
