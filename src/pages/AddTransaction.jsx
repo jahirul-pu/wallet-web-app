@@ -19,6 +19,7 @@ export default function AddTransaction() {
   const accounts = useAccountStore((s) => s.accounts);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const transfer = useAccountStore((s) => s.transfer);
+  const getPrimaryAccountId = useAccountStore((s) => s.getPrimaryAccountId);
 
   const editId = searchParams.get('edit');
   const editTxn = useMemo(() => editId ? transactions.find(t => t.id === editId) : null, [editId, transactions]);
@@ -40,7 +41,7 @@ export default function AddTransaction() {
     return accounts.filter((a) => !a.type || a.type === 'all' || a.type === type);
   }, [accounts, type]);
 
-  const [accountId, setAccountId] = useState(editTxn ? editTxn.accountId : (searchParams.get('account') || filteredAccounts[0]?.id || ''));
+  const [accountId, setAccountId] = useState(editTxn ? editTxn.accountId : (searchParams.get('account') || getPrimaryAccountId() || filteredAccounts[0]?.id || ''));
   const [toAccountId, setToAccountId] = useState(editTxn && editTxn.type === 'transfer' ? editTxn.toAccountId : (accounts[1]?.id || ''));
 
   // Keep selected account valid when switching types (skip if editing to prevent override loops)

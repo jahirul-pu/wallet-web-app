@@ -76,6 +76,7 @@ export default function Accounts() {
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showTransferSheet, setShowTransferSheet] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
   const [newName, setNewName] = useState('');
@@ -206,6 +207,10 @@ export default function Accounts() {
 
   const isPositive = monthlyChange >= 0;
 
+  // Calculate distribution (only for positive balances)
+  const positiveAccounts = accounts.filter(a => a.balance > 0).sort((a, b) => b.balance - a.balance);
+  const totalPositive = positiveAccounts.reduce((sum, a) => sum + a.balance, 0);
+
   return (
     <div className="page" id="accounts-page">
       <h1 className="page-title">Wallets</h1>
@@ -236,115 +241,199 @@ export default function Accounts() {
         </div>
       </div>
 
-      {/* Account list */}
-      <div className="accounts-list">
-        {accounts.map((acc, index) => {
+      {/* Distribution View */}
+      {totalPositive > 0 && (
+        <div className="wallet-distribution card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-4)' }}>
+          <div className="distribution-header" style={{ marginBottom: 'var(--space-3)' }}>
+            <h3 style={{ fontSize: 'var(--text-md)', fontWeight: '600', opacity: 0.9 }}>Distribution</h3>
+          </div>
+          <div className="distribution-bar-wrap" style={{ display: 'flex', height: '12px', borderRadius: 'var(--radius-full)', overflow: 'hidden', background: 'var(--color-bg-input)', marginBottom: 'var(--space-4)' }}>
+            {positiveAccounts.map(acc => {
+              const percent = (acc.balance / totalPositive) * 100;
+              return (
+                <div
+                  key={acc.id}
+                  className="distribution-segment"
+                  style={{
+                    width: `${percent}%`,
+                    backgroundColor: acc.color,
+                  }}
+                  title={`${acc.name}: ${percent.toFixed(1)}%`}
+                />
+              );
+            })}
+          </div>
+          <div className="distribution-legend" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.75rem' }}>
+            {positiveAccounts.map(acc => {
+              const percent = (acc.balance / totalPositive) * 100;
+              if (percent < 1.5) return null; // Don't show tiny slices in legend
+              return (
+                <div key={acc.id} className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="legend-color" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: acc.color }} />
+                  <span className="legend-text" style={{ opacity: 0.8 }}>
+                    {acc.name} <span className="legend-percent" style={{ fontWeight: 600, opacity: 1, marginLeft: '2px' }}>{Math.round(percent)}%</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Account list — split active & inactive */}
+      {(() => {
+        const activeAccounts = [];
+        const inactiveAccounts = [];
+        accounts.forEach((acc, index) => {
+          if (acc.balance === 0) {
+            inactiveAccounts.push({ acc, index });
+          } else {
+            activeAccounts.push({ acc, index });
+          }
+        });
+
+        const renderWalletCard = ({ acc, index }, isPrimary) => {
           const stats = walletStats[acc.id] || { count: 0, lastUsedLabel: 'Never', activity: 'inactive' };
           return (
-          <div key={acc.id} className="account-card card">
-            <div className="account-card-top">
-              <div className="account-card-left" onClick={() => openEditSheet(acc)} style={{ cursor: 'pointer', flex: 1 }}>
-                <div className="account-card-icon-wrap">
-                  <div
-                    className="account-card-icon"
-                    style={{ background: `${acc.color}18`, color: acc.color }}
-                  >
-                    {renderAccountIcon(acc.icon)}
+            <div key={acc.id} className={`account-card card ${isPrimary ? 'primary-wallet' : ''}`}>
+              <div className="account-card-top">
+                <div className="account-card-left" onClick={() => openEditSheet(acc)} style={{ cursor: 'pointer', flex: 1 }}>
+                  <div className="account-card-icon-wrap">
+                    <div
+                      className="account-card-icon"
+                      style={{ background: `${acc.color}18`, color: acc.color }}
+                    >
+                      {renderAccountIcon(acc.icon)}
+                    </div>
+                    <span className={`wallet-activity-dot ${stats.activity}`} />
                   </div>
-                  {/* Activity indicator dot */}
-                  <span className={`wallet-activity-dot ${stats.activity}`} />
-                </div>
-                <div className="account-card-info">
-                  <div className="account-card-name">
-                    {acc.name}
-                    {acc.type && acc.type !== 'all' && (
-                      <span className="wallet-type-tag">
-                        {acc.type}
+                  <div className="account-card-info">
+                    <div className="account-card-name">
+                      {acc.name}
+                      {isPrimary && (
+                        <span className="wallet-primary-badge">Default</span>
+                      )}
+                      {acc.type && acc.type !== 'all' && (
+                        <span className="wallet-type-tag">
+                          {acc.type}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="account-card-balance"
+                      style={{ color: acc.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
+                    >
+                      {formatAmount(acc.balance, currency)}
+                    </div>
+                    <div className="wallet-meta">
+                      <span className="wallet-meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {stats.lastUsedLabel}
                       </span>
-                    )}
+                      <span className="wallet-meta-sep">·</span>
+                      <span className="wallet-meta-item">
+                        {stats.count} txn{stats.count !== 1 ? 's' : ''}
+                      </span>
+                    </div>
                   </div>
-                  <div
-                    className="account-card-balance"
-                    style={{ color: acc.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
+                </div>
+
+                <div className="account-card-right">
+                  <div className="account-card-reorder">
+                    <button 
+                      className="btn-icon-mini" 
+                      onClick={() => reorderAccounts(index, index - 1)}
+                      disabled={index === 0}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    </button>
+                    <button 
+                      className="btn-icon-mini" 
+                      onClick={() => reorderAccounts(index, index + 1)}
+                      disabled={index === accounts.length - 1}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                  </div>
+                  <button
+                    className="btn-icon-mini delete"
+                    onClick={() => {
+                      if (window.confirm('Delete this wallet?')) deleteAccount(acc.id);
+                    }}
+                    disabled={accounts.length === 1}
                   >
-                    {formatAmount(acc.balance, currency)}
-                  </div>
-                  {/* Wallet meta row */}
-                  <div className="wallet-meta">
-                    <span className="wallet-meta-item">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      {stats.lastUsedLabel}
-                    </span>
-                    <span className="wallet-meta-sep">·</span>
-                    <span className="wallet-meta-item">
-                      {stats.count} txn{stats.count !== 1 ? 's' : ''}
-                    </span>
-                  </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
                 </div>
               </div>
 
-              {/* Right side: reorder & delete */}
-              <div className="account-card-right">
-                <div className="account-card-reorder">
-                  <button 
-                    className="btn-icon-mini" 
-                    onClick={() => reorderAccounts(index, index - 1)}
-                    disabled={index === 0}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                  </button>
-                  <button 
-                    className="btn-icon-mini" 
-                    onClick={() => reorderAccounts(index, index + 1)}
-                    disabled={index === accounts.length - 1}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                  </button>
-                </div>
+              <div className="wallet-quick-actions">
                 <button
-                  className="btn-icon-mini delete"
-                  onClick={() => {
-                    if (window.confirm('Delete this wallet?')) deleteAccount(acc.id);
-                  }}
-                  disabled={accounts.length === 1}
+                  className="wallet-qa-btn income"
+                  onClick={() => navigate(`/add?type=income&account=${acc.id}`)}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add
+                </button>
+                <button
+                  className="wallet-qa-btn expense"
+                  onClick={() => navigate(`/add?type=expense&account=${acc.id}`)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Spend
+                </button>
+                <button
+                  className="wallet-qa-btn transfer"
+                  onClick={() => {
+                    setFromAcc(acc.id);
+                    setToAcc(accounts.find(a => a.id !== acc.id)?.id || '');
+                    setShowTransferSheet(true);
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 8 16 13"/><line x1="21" y1="8" x2="9" y2="8"/><polyline points="8 21 3 16 8 11"/><line x1="3" y1="16" x2="15" y2="16"/></svg>
+                  Transfer
                 </button>
               </div>
             </div>
-
-            {/* Quick actions row */}
-            <div className="wallet-quick-actions">
-              <button
-                className="wallet-qa-btn income"
-                onClick={() => navigate(`/add?type=income&account=${acc.id}`)}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add
-              </button>
-              <button
-                className="wallet-qa-btn expense"
-                onClick={() => navigate(`/add?type=expense&account=${acc.id}`)}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Spend
-              </button>
-              <button
-                className="wallet-qa-btn transfer"
-                onClick={() => {
-                  setFromAcc(acc.id);
-                  setToAcc(accounts.find(a => a.id !== acc.id)?.id || '');
-                  setShowTransferSheet(true);
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 8 16 13"/><line x1="21" y1="8" x2="9" y2="8"/><polyline points="8 21 3 16 8 11"/><line x1="3" y1="16" x2="15" y2="16"/></svg>
-                Transfer
-              </button>
-            </div>
-          </div>
           );
-        })}
-      </div>
+        };
+
+        return (
+          <>
+            {/* Active wallets */}
+            <div className="accounts-list">
+              {activeAccounts.map((item, i) => renderWalletCard(item, i === 0 && item.index === 0))}
+            </div>
+
+            {/* Inactive wallets — collapsible */}
+            {inactiveAccounts.length > 0 && (
+              <div className="inactive-wallets-section">
+                <button
+                  className="inactive-wallets-toggle"
+                  onClick={() => setShowInactive(!showInactive)}
+                >
+                  <span className="inactive-toggle-left">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" opacity="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Inactive Wallets ({inactiveAccounts.length})
+                  </span>
+                  <svg
+                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    style={{ transition: 'transform 0.2s', transform: showInactive ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                {showInactive && (
+                  <div className="accounts-list" style={{ marginTop: 'var(--space-3)' }}>
+                    {inactiveAccounts.map((item) => renderWalletCard(item, false))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Action buttons */}
       <div className="accounts-actions">

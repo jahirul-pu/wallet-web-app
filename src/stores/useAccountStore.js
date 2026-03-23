@@ -15,6 +15,10 @@ export const useAccountStore = create(
     (set, get) => ({
       accounts: DEFAULT_ACCOUNTS,
 
+      getPrimaryAccountId: () => {
+        return get().accounts[0]?.id || '';
+      },
+
       addAccount: (data) => {
         const account = {
           id: generateId(),
