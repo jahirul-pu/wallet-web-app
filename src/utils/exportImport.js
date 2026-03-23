@@ -86,11 +86,15 @@ export const exportPDF = async (transactions, getCategoryInfo, formatAmount, cur
 
   const data = transactions.map((t) => {
     const cat = getCategoryInfo(t.category);
+    // Use currency code instead of symbol for jsPDF compatibility
+    const sign = t.amount < 0 ? '-' : '';
+    const safeAmount = `${sign}${currency} ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(Math.abs(t.amount))}`;
+
     return [
       t.date,
       t.type.charAt(0).toUpperCase() + t.type.slice(1),
       cat.name,
-      formatAmount(t.amount, currency),
+      safeAmount,
       t.note || '',
       t.accountId || 'Vault'
     ];

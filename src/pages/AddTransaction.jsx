@@ -7,6 +7,7 @@ import CategoryPicker from '../components/CategoryPicker';
 import AccountDropdown from '../components/AccountDropdown';
 import CalculatorInput from '../components/CalculatorInput';
 import DatePicker from '../components/DatePicker';
+import BottomSheet from '../components/BottomSheet';
 import { toInputDate } from '../utils/dateFormat';
 import './AddTransaction.css';
 
@@ -41,7 +42,7 @@ export default function AddTransaction() {
     return accounts.filter((a) => !a.type || a.type === 'all' || a.type === type);
   }, [accounts, type]);
 
-  const [accountId, setAccountId] = useState(editTxn ? editTxn.accountId : (searchParams.get('account') || getPrimaryAccountId() || filteredAccounts[0]?.id || ''));
+  const [accountId, setAccountId] = useState(editTxn ? editTxn.accountId : (searchParams.get('account') || searchParams.get('toAccount') || getPrimaryAccountId() || filteredAccounts[0]?.id || ''));
   const [toAccountId, setToAccountId] = useState(editTxn && editTxn.type === 'transfer' ? editTxn.toAccountId : (accounts[1]?.id || ''));
 
   // Keep selected account valid when switching types (skip if editing to prevent override loops)
@@ -51,12 +52,9 @@ export default function AddTransaction() {
     }
   }, [filteredAccounts, accountId, editTxn]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!amount || Number(amount) <= 0) return;
-    if (type === 'transfer' && accountId === toAccountId) return;
-    if (type !== 'transfer' && !category) return;
+  const [showLowBalanceWarning, setShowLowBalanceWarning] = useState(false);
 
+  const executeSave = () => {
     // Mathematical Ledger Reversal constraint mapping
     if (editTxn) {
       if (editTxn.type === 'transfer') {
@@ -103,6 +101,30 @@ export default function AddTransaction() {
     }
 
     navigate(-1);
+  };
+
+  const handleSubmit = (e) => {
+    e?.preventDefault();
+    if (!amount || Number(amount) <= 0) return;
+    if (type === 'transfer' && accountId === toAccountId) return;
+    if (type !== 'transfer' && !category) return;
+
+    const amt = Number(amount);
+    const account = accounts.find(a => a.id === accountId);
+    let availableBalance = account?.balance || 0;
+    
+    if (editTxn && editTxn.accountId === accountId) {
+      if (editTxn.type === 'expense' || editTxn.type === 'transfer') {
+        availableBalance += editTxn.amount;
+      }
+    }
+
+    if ((type === 'expense' || type === 'transfer') && amt > availableBalance) {
+      setShowLowBalanceWarning(true);
+      return;
+    }
+
+    executeSave();
   };
 
   const getAccountName = (id) => accounts.find((a) => a.id === id)?.name || '';
@@ -233,6 +255,27 @@ export default function AddTransaction() {
           {type === 'transfer' ? 'Transfer' : 'Save Transaction'}
         </button>
       </form>
+
+      <BottomSheet isOpen={showLowBalanceWarning} onClose={() => setShowLowBalanceWarning(false)} title="Insufficient Funds" centered>
+        <div style={{ padding: 'var(--space-4)', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: 'var(--space-3)' }}>⚠️</div>
+          <h3 style={{ marginBottom: 'var(--space-2)' }}>Low Balance</h3>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>
+            This transaction exceeds the available balance in <strong>{getAccountName(accountId)}</strong>.
+          </p>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', flexDirection: 'column' }}>
+            <button className="btn btn-primary" onClick={() => {
+              setShowLowBalanceWarning(false);
+              setType('transfer');
+              setToAccountId(accountId);
+              setAccountId(accounts.find(a => a.id !== accountId && a.balance >= Number(amount))?.id || accounts.find(a => a.id !== accountId)?.id || '');
+            }}>
+              Transfer Funds Here
+            </button>
+            <button className="btn btn-secondary" onClick={() => setShowLowBalanceWarning(false)}>Cancel</button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

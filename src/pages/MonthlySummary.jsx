@@ -9,7 +9,7 @@ import { getCategoryInfo } from '../utils/categories';
 import { formatAmount } from '../utils/currencies';
 import { usePrivacy } from '../hooks/usePrivacy';
 import { getMonthKey } from '../utils/dateFormat';
-import { exportCSV } from '../utils/exportImport';
+import { exportCSV, exportPDF } from '../utils/exportImport';
 import './MonthlySummary.css';
 
 export default function MonthlySummary() {
@@ -117,12 +117,20 @@ export default function MonthlySummary() {
     return Math.round(((curr - prev) / prev) * 100);
   };
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     const monthTxns = transactions.filter((t) => {
       const d = new Date(t.date);
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === currentMonthKey;
     });
     exportCSV(monthTxns, getCategoryInfo, formatAmount, currency);
+  };
+
+  const handleExportPDF = () => {
+    const monthTxns = transactions.filter((t) => {
+      const d = new Date(t.date);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === currentMonthKey;
+    });
+    exportPDF(monthTxns, getCategoryInfo, formatAmount, currency);
   };
 
   return (
@@ -135,10 +143,16 @@ export default function MonthlySummary() {
             {daysLeft > 0 ? `${daysLeft} days remaining` : 'Last day of the month'}
           </div>
         </div>
-        <button className="btn btn-secondary ms-export-btn" onClick={handleExport}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Export Report
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-secondary ms-export-btn" onClick={handleExportCSV} title="Export CSV">
+            <svg style={{marginRight: '6px'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            CSV
+          </button>
+          <button className="btn btn-secondary ms-export-btn" onClick={handleExportPDF} title="Export PDF">
+            <svg style={{marginRight: '6px'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            PDF
+          </button>
+        </div>
       </div>
 
       {/* ── Score Card ── */}

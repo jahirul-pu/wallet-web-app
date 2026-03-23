@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
+import { useAccountStore } from '../stores/useAccountStore';
 import { useAnimatedCounter } from '../hooks/useAnimatedCounter';
 import { usePrivacy } from '../hooks/usePrivacy';
+import { toInputDate } from '../utils/dateFormat';
 import './BalanceCard.css';
 
 export default function BalanceCard() {
@@ -12,17 +14,14 @@ export default function BalanceCard() {
   const transactions = useTransactionStore((s) => s.transactions);
   const [timeFilter, setTimeFilter] = useState('month'); // week, month, year
   const { mask } = usePrivacy();
+  const accounts = useAccountStore((s) => s.accounts);
 
   const { balance, income, expense, sparkData, pctChangeStr, pctChangeColor } = useMemo(() => {
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = toInputDate(now);
     
     // total absolute balance
-    const totalBalance = transactions.reduce((s, t) => {
-      if (t.type === 'income') return s + t.amount;
-      if (t.type === 'expense') return s - t.amount;
-      return s;
-    }, 0);
+    const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
     let startDate = new Date();
     let sparkPoints = [];
@@ -39,7 +38,7 @@ export default function BalanceCard() {
       for (let i = 6; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
-        sparkPoints.push(d.toISOString().split('T')[0]);
+        sparkPoints.push(toInputDate(d));
       }
     } else if (timeFilter === 'month') {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -50,7 +49,7 @@ export default function BalanceCard() {
       const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
       for (let i = 1; i <= days; i += 3) {
         const d = new Date(now.getFullYear(), now.getMonth(), i);
-        if (d <= now) sparkPoints.push(d.toISOString().split('T')[0]);
+        if (d <= now) sparkPoints.push(toInputDate(d));
       }
       if (sparkPoints[sparkPoints.length - 1] !== todayStr) {
          sparkPoints.push(todayStr); // always end on today
@@ -63,13 +62,13 @@ export default function BalanceCard() {
 
       for (let i = 0; i <= now.getMonth(); i++) {
         const d = new Date(now.getFullYear(), i + 1, 0); // last day of month
-        sparkPoints.push(d.toISOString().split('T')[0]);
+        sparkPoints.push(toInputDate(d));
       }
     }
 
-    const startStr = startDate.toISOString().split('T')[0];
-    const prevStartStr = prevStartDate.toISOString().split('T')[0];
-    const prevEndStr = prevEndDate.toISOString().split('T')[0];
+    const startStr = toInputDate(startDate);
+    const prevStartStr = toInputDate(prevStartDate);
+    const prevEndStr = toInputDate(prevEndDate);
 
     // Current period transactions
     const currentTxns = transactions.filter(t => t.date >= startStr && t.date <= todayStr);
@@ -103,7 +102,9 @@ export default function BalanceCard() {
     // Chart Data (Running Balance)
     const runningBalChartData = sparkPoints.map(dateStr => {
       // Find balance closing at this date
-      return transactions.filter(t => t.date <= dateStr).reduce((s, t) => t.type === 'income' ? s + t.amount : t.type === 'expense' ? s - t.amount : s, 0);
+      const futureTxns = transactions.filter(t => t.date > dateStr);
+      const futureNetFlow = futureTxns.reduce((s, t) => t.type === 'income' ? s + t.amount : t.type === 'expense' ? s - t.amount : s, 0);
+      return totalBalance - futureNetFlow;
     });
 
     if (runningBalChartData.length < 2) {
@@ -118,7 +119,7 @@ export default function BalanceCard() {
       pctChangeStr: growthStr,
       pctChangeColor: growthColor
     };
-  }, [transactions, timeFilter]);
+  }, [transactions, timeFilter, accounts]);
 
   const animatedBalance = useAnimatedCounter(balance, 900);
   const animatedIncome = useAnimatedCounter(income, 700);

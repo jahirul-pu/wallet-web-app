@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSettingsStore } from '../stores/useSettingsStore';
+import { usePrivacy } from '../hooks/usePrivacy';
 import { getAccountIcon } from '../utils/accountIcons';
 import './AccountDropdown.css';
 
@@ -6,6 +8,8 @@ import './AccountDropdown.css';
 export default function AccountDropdown({ accounts, value, onChange, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
+  const currency = useSettingsStore((s) => s.currency);
+  const { mask } = usePrivacy();
 
   const selectedAccount = accounts.find((a) => a.id === value) || accounts[0];
 
@@ -31,7 +35,10 @@ export default function AccountDropdown({ accounts, value, onChange, disabled })
         <span className="account-dropdown-icon" style={{ color: selectedAccount.color || 'var(--color-primary)' }}>
           {getAccountIcon(selectedAccount)}
         </span>
-        <span className="account-dropdown-label">{selectedAccount.name}</span>
+        <span className="account-dropdown-label">
+          {selectedAccount.name}
+          <span className="account-dropdown-balance">{mask(selectedAccount.balance, currency)}</span>
+        </span>
         <svg className={`account-dropdown-chevron ${isOpen ? 'open' : ''}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
 
@@ -50,7 +57,10 @@ export default function AccountDropdown({ accounts, value, onChange, disabled })
               <span className="account-dropdown-icon" style={{ color: a.color || 'var(--color-text-secondary)' }}>
                 {getAccountIcon(a)}
               </span>
-              <span className="account-dropdown-label">{a.name}</span>
+              <span className="account-dropdown-label">
+                {a.name}
+                <span className="account-dropdown-balance">{mask(a.balance, currency)}</span>
+              </span>
               {a.id === value && (
                 <svg className="account-dropdown-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               )}

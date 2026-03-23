@@ -7,7 +7,7 @@ import { useBudgetStore } from '../stores/useBudgetStore';
 import { getCategoryInfo } from '../utils/categories';
 import { formatAmount } from '../utils/currencies';
 import { usePrivacy } from '../hooks/usePrivacy';
-import { exportCSV } from '../utils/exportImport';
+import { exportCSV, exportPDF } from '../utils/exportImport';
 import { getMonthKey, toInputDate, daysUntil, formatMonth } from '../utils/dateFormat';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -168,10 +168,16 @@ export default function Analytics() {
     <div className="page" id="analytics-page">
       <div className="analytics-header">
         <h1 className="page-title" style={{ margin: 0 }}>Analytics</h1>
-        <button className="btn btn-secondary" onClick={() => exportCSV(transactions, getCategoryInfo, formatAmount, currency)}>
-          <svg style={{marginRight: '6px'}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Export
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-secondary" onClick={() => exportCSV(transactions, getCategoryInfo, formatAmount, currency)} title="Export CSV">
+            <svg style={{marginRight: '6px'}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            CSV
+          </button>
+          <button className="btn btn-secondary" onClick={() => exportPDF(transactions, getCategoryInfo, formatAmount, currency)} title="Export PDF">
+             <svg style={{marginRight: '6px'}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            PDF
+          </button>
+        </div>
       </div>
 
       {/* 1. Monthly Summary Hook (Anchor) */}

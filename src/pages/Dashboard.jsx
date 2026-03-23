@@ -11,6 +11,7 @@ import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
 import { getCategoryInfo, getExpenseCategories, getIncomeCategories } from '../utils/categories';
 import { toInputDate } from '../utils/dateFormat';
+import BottomSheet from '../components/BottomSheet';
 import { useAnimatedCounter } from '../hooks/useAnimatedCounter';
 import TodaySection from '../components/TodaySection';
 import './Dashboard.css';
@@ -41,6 +42,7 @@ export default function Dashboard() {
   const [qaCategory, setQaCategory] = useState('food');
   const [qaSuccess, setQaSuccess] = useState(false);
   const [qaExpanded, setQaExpanded] = useState(false);
+  const [showLowBalanceWarning, setShowLowBalanceWarning] = useState(false);
   const [analyticsPeriod, setAnalyticsPeriod] = useState('month'); // 'week', 'month', 'last_month'
 
   const qaCategoryList = useMemo(() => {
@@ -65,10 +67,8 @@ export default function Dashboard() {
     }
   }, [filteredQaAccounts, qaAccountId]);
 
-  const handleQuickAdd = (e) => {
-    e.preventDefault();
+  const executeQuickAdd = () => {
     const amt = Number(qaAmount);
-    if (!amt || amt <= 0) return;
     addTransaction({
       type: qaType,
       amount: amt,
@@ -85,6 +85,22 @@ export default function Dashboard() {
       setQaSuccess(false);
       setQaExpanded(false);
     }, 1500);
+  };
+
+  const handleQuickAdd = (e) => {
+    e?.preventDefault();
+    const amt = Number(qaAmount);
+    if (!amt || amt <= 0) return;
+
+    if (qaType === 'expense') {
+      const account = accounts.find(a => a.id === qaAccountId);
+      if (account && amt > (account.balance || 0)) {
+        setShowLowBalanceWarning(true);
+        return;
+      }
+    }
+
+    executeQuickAdd();
   };
 
   const currentMonth = getMonthKey(toInputDate());
@@ -113,18 +129,14 @@ export default function Dashboard() {
 
     const inc = monthTxns.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const exp = monthTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    const bal = transactions.reduce((s, t) => {
-      if (t.type === 'income') return s + t.amount;
-      if (t.type === 'expense') return s - t.amount;
-      return s;
-    }, 0);
+    const bal = accounts.reduce((s, a) => s + a.balance, 0);
 
     const recent = [...transactions]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
 
     return { balance: bal, income: inc, expense: exp, recentTxns: recent };
-  }, [transactions, currentMonth]);
+  }, [transactions, currentMonth, accounts]);
 
   // Smoothed path helper (Cubic Bezier)
   const getCurvePath = (data, accessor, max, width = 100, height = 40) => {
@@ -332,7 +344,7 @@ export default function Dashboard() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const ds = d.toISOString().split('T')[0];
+      const ds = toInputDate(d);
       pts.push(transactions.filter((t) => t.date === ds && filterFn(t)).reduce((s, t) => s + t.amount, 0));
     }
     return pts;
@@ -341,21 +353,22 @@ export default function Dashboard() {
   const balanceSpark = useMemo(() => {
     const pts = [];
     const now = new Date();
+    const totalBal = accounts.reduce((s, a) => s + a.balance, 0);
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const ds = d.toISOString().split('T')[0];
-      const running = transactions
-        .filter((t) => t.date <= ds)
-        .reduce((s, t) => {
+      const ds = toInputDate(d);
+      const futureTxns = transactions.filter((t) => t.date > ds);
+      const futureNet = futureTxns.reduce((s, t) => {
           if (t.type === 'income') return s + t.amount;
           if (t.type === 'expense') return s - t.amount;
           return s;
-        }, 0);
-      pts.push(running);
+      }, 0);
+      pts.push(totalBal - futureNet);
     }
     return pts;
-  }, [transactions]);
+  }, [transactions, accounts]);
 
   const incomeSpark = useMemo(() => spark7((t) => t.type === 'income'), [transactions]);
   const expenseSpark = useMemo(() => spark7((t) => t.type === 'expense'), [transactions]);
@@ -1033,6 +1046,26 @@ export default function Dashboard() {
         <div className="dashboard-col-side">
           {/* You can add smaller widgets here later */}
         </div>
+      {/* Low Balance Warning Sheet */}
+      <BottomSheet isOpen={showLowBalanceWarning} onClose={() => setShowLowBalanceWarning(false)} title="Insufficient Funds" centered>
+        <div style={{ padding: 'var(--space-4)', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: 'var(--space-3)' }}>⚠️</div>
+          <h3 style={{ marginBottom: 'var(--space-2)' }}>Low Balance</h3>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>
+            This transaction exceeds the available balance in <strong>{accounts.find(a => a.id === qaAccountId)?.name || 'the current wallet'}</strong>.
+          </p>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', flexDirection: 'column' }}>
+            <button className="btn btn-primary" onClick={() => {
+              setShowLowBalanceWarning(false);
+              const fallbackAccount = accounts.find(a => a.id !== qaAccountId && a.balance >= Number(qaAmount))?.id || accounts.find(a => a.id !== qaAccountId)?.id || '';
+              navigate(`/add?type=transfer&toAccount=${qaAccountId}&account=${fallbackAccount}`);
+            }}>
+              Transfer Funds Here
+            </button>
+            <button className="btn btn-secondary" onClick={() => setShowLowBalanceWarning(false)}>Cancel</button>
+          </div>
+        </div>
+      </BottomSheet>
       </div>
     </div>
   );

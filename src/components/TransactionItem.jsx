@@ -94,15 +94,25 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
     return date.toLocaleString('default', { month: 'short', year: 'numeric' });
   };
 
+  const accounts = useAccountStore((s) => s.accounts);
+
   // Build primary title: Category Name
   const title = cat.name;
   
-  // Build subtitle line: party/note • salary month • relative time
+  // Build subtitle line: party/note • wallet • salary month • relative time
   const formattedMonth = formatSalaryMonth(transaction.salaryMonth);
   const partyOrNote = transaction.party || transaction.note || '';
   
+  const account = accounts?.find(a => a.id === transaction.accountId);
+  let accountDisplay = account ? account.name : 'Unknown Wallet';
+  if (transaction.type === 'transfer') {
+    const toAccount = accounts?.find(a => a.id === transaction.toAccountId);
+    accountDisplay = `${account?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}`;
+  }
+
   const subtitle = [
     partyOrNote,
+    accountDisplay,
     formattedMonth || null,
     formatDate(transaction.date),
   ].filter(Boolean).join(' • ');

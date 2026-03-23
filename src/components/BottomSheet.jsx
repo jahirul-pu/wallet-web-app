@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import './BottomSheet.css';
 
-export default function BottomSheet({ isOpen, onClose, title, children }) {
+export default function BottomSheet({ isOpen, onClose, title, children, centered = false }) {
   const sheetRef = useRef(null);
   const overlayRef = useRef(null);
 
@@ -26,13 +26,13 @@ export default function BottomSheet({ isOpen, onClose, title, children }) {
 
   return (
     <div
-      className="bottom-sheet-overlay"
+      className={`bottom-sheet-overlay ${centered ? 'centered-overlay' : ''}`}
       ref={overlayRef}
       onClick={handleOverlayClick}
       id="bottom-sheet-overlay"
     >
-      <div className="bottom-sheet" ref={sheetRef}>
-        <div className="bottom-sheet-handle" />
+      <div className={`bottom-sheet ${centered ? 'centered-modal' : ''}`} ref={sheetRef}>
+        {!centered && <div className="bottom-sheet-handle" />}
         <div className="bottom-sheet-header">
           <h3 className="bottom-sheet-title">{title}</h3>
           <button className="bottom-sheet-close" onClick={onClose} id="bottom-sheet-close">
