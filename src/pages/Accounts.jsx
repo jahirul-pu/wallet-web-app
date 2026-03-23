@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
-import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import { renderAccountIcon } from '../utils/accountIcons';
 import { getCategoryInfo } from '../utils/categories';
+import { formatAmount } from '../utils/currencies';
 import BottomSheet from '../components/BottomSheet';
 import AccountDropdown from '../components/AccountDropdown';
 import CalculatorInput from '../components/CalculatorInput';
@@ -74,10 +75,9 @@ export default function Accounts() {
   const transfer = useAccountStore((s) => s.transfer);
   const reorderAccounts = useAccountStore((s) => s.reorderAccounts);
   const currency = useSettingsStore((s) => s.currency);
-  const hideBalances = useSettingsStore((s) => s.hideBalances);
-  const toggleHideBalances = useSettingsStore((s) => s.toggleHideBalances);
   const transactions = useTransactionStore((s) => s.transactions);
   const navigate = useNavigate();
+  const { hidden: hideBalances, toggle: toggleHideBalances, mask } = usePrivacy();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showTransferSheet, setShowTransferSheet] = useState(false);
@@ -280,13 +280,13 @@ export default function Accounts() {
           </button>
         </div>
         <div className="accounts-total-amount" style={{ position: 'relative', zIndex: 1 }}>
-          {hideBalances ? maskedAmount : formatAmount(getTotalBalance(), currency)}
+          {mask(getTotalBalance(), currency)}
         </div>
 
         {/* Monthly change */}
         <div className="accounts-monthly-change" style={{ position: 'relative', zIndex: 1 }}>
           <span className={`monthly-change-badge ${isPositive ? 'positive' : 'negative'}`}>
-            {hideBalances ? maskedAmount : `${isPositive ? '+' : ''}${formatAmount(monthlyChange, currency)}`} this month
+            {isPositive ? '+' : ''}{mask(monthlyChange, currency)} this month
             <span className="monthly-change-arrow">{isPositive ? '↑' : '↓'}</span>
           </span>
         </div>
@@ -388,7 +388,7 @@ export default function Accounts() {
                       className="account-card-balance"
                       style={{ color: acc.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
                     >
-                      {hideBalances ? maskedAmount : formatAmount(acc.balance, currency)}
+                      {mask(acc.balance, currency)}
                     </div>
                     <div className="wallet-meta">
                       <span className="wallet-meta-item">
@@ -506,7 +506,7 @@ export default function Accounts() {
                           {txn.note ? ` — ${txn.note}` : ''}
                         </span>
                         <span className={`wallet-activity-amount ${isIncome ? 'income' : isTransfer ? 'transfer' : 'expense'}`}>
-                          {hideBalances ? '•••' : `${isIncome ? '+' : isTransfer ? '' : '-'}${formatAmount(txn.amount, currency)}`}
+                          {mask(txn.amount, currency)}
                         </span>
                       </div>
                     );

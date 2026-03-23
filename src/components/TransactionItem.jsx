@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { getCategoryInfo } from '../utils/categories';
 import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import { formatDate } from '../utils/dateFormat';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
@@ -15,6 +16,7 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
   const updateTransaction = useTransactionStore((s) => s.updateTransaction);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const transfer = useAccountStore((s) => s.transfer);
+  const { mask } = usePrivacy();
   const cat = getCategoryInfo(transaction.category);
   const isIncome = transaction.type === 'income';
   const isTransfer = transaction.type === 'transfer';
@@ -129,7 +131,7 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
       {/* Right: Amount */}
       <div className="txn-right">
         <div className={`txn-amount ${isIncome ? 'income' : isTransfer ? 'transfer' : 'expense'}`}>
-          {isIncome ? '+' : isTransfer ? '' : '-'}{formatAmount(transaction.amount, currency)}
+          {isIncome ? '+' : isTransfer ? '' : '-'}{mask(transaction.amount, currency)}
         </div>
         
         <div className="txn-right-meta">
@@ -138,7 +140,7 @@ export default function TransactionItem({ transaction, onDelete, onClick }) {
           </span>
           {transaction._runningBalance !== undefined && (
             <span className="txn-running-balance">
-              • {formatAmount(transaction._runningBalance, currency)}
+              • {mask(transaction._runningBalance, currency)}
             </span>
           )}
         </div>

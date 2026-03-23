@@ -6,17 +6,19 @@ import { useAccountStore } from '../stores/useAccountStore';
 import { renderAccountIcon } from '../utils/accountIcons';
 import { useDebtStore } from '../stores/useDebtStore';
 import { getMonthKey } from '../utils/dateFormat';
-import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import BalanceCard from '../components/BalanceCard';
 import TransactionItem from '../components/TransactionItem';
 import { getCategoryInfo, getExpenseCategories, getIncomeCategories } from '../utils/categories';
 import { toInputDate } from '../utils/dateFormat';
 import { useAnimatedCounter } from '../hooks/useAnimatedCounter';
+import TodaySection from '../components/TodaySection';
 import './Dashboard.css';
 
 function AnimatedAmount({ value, currency }) {
   const animated = useAnimatedCounter(value || 0, 1200);
-  return <>{formatAmount(animated, currency)}</>;
+  const { mask } = usePrivacy();
+  return <>{mask(animated, currency)}</>;
 }
 
 
@@ -29,6 +31,7 @@ export default function Dashboard() {
   const addTransaction = useTransactionStore((s) => s.addTransaction);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const debts = useDebtStore((s) => s.debts);
+  const { mask } = usePrivacy();
 
   // Quick-add state
   const [qaAmount, setQaAmount] = useState('');
@@ -392,6 +395,8 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <TodaySection />
+
         {/* Row 1 — Financial Overview */}
         <div className="fin-overview-row">
           <OverviewCard
@@ -576,7 +581,7 @@ export default function Dashboard() {
                     </div>
                     <div className="wallet-row-right">
                       <div className="wallet-row-balances">
-                        <span className="wallet-row-amount">{formatAmount(acc.balance, currency)}</span>
+                        <span className="wallet-row-amount">{mask(acc.balance, currency)}</span>
                         <span className="wallet-row-pct">({pct}%)</span>
                       </div>
                       <div className="wallet-row-bar-bg">
@@ -603,11 +608,11 @@ export default function Dashboard() {
               <div className="dashboard-debt-row">
                 <div className="dashboard-debt-item">
                   <span className="debt-label">Receivable</span>
-                  <span className="debt-value income">{formatAmount(totalOwedToMe, currency)}</span>
+                  <span className="debt-value income">{mask(totalOwedToMe, currency)}</span>
                 </div>
                 <div className="dashboard-debt-item">
                   <span className="debt-label">Payable</span>
-                  <span className="debt-value expense">{formatAmount(totalIOwe, currency)}</span>
+                  <span className="debt-value expense">{mask(totalIOwe, currency)}</span>
                 </div>
               </div>
             </div>

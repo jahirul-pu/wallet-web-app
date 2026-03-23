@@ -5,7 +5,7 @@ import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getCategoryInfo, getExpenseCategories } from '../utils/categories';
 import { getMonthKey } from '../utils/dateFormat';
-import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import BottomSheet from '../components/BottomSheet';
 import CalculatorInput from '../components/CalculatorInput';
 import '../components/CategoryPicker.css';
@@ -20,6 +20,7 @@ export default function Budgets() {
   const transactions = useTransactionStore((s) => s.transactions);
   const currency = useSettingsStore((s) => s.currency);
   const navigate = useNavigate();
+  const { mask } = usePrivacy();
 
   const currentMonth = getMonthKey(new Date().toISOString());
   const [showSheet, setShowSheet] = useState(false);
@@ -120,18 +121,18 @@ export default function Budgets() {
         <div className="budget-overview-row">
           <div>
             <div className="budget-overview-label">Total Budget</div>
-            <div className="budget-overview-value">{formatAmount(totalBudget, currency)}</div>
+            <div className="budget-overview-value">{mask(totalBudget, currency)}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             <div className="budget-overview-label">Spent</div>
             <div className="budget-overview-value" style={{ color: totalSpent > totalBudget ? 'var(--color-danger)' : 'var(--color-expense)' }}>
-              {formatAmount(totalSpent, currency)}
+              {mask(totalSpent, currency)}
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="budget-overview-label">Remaining</div>
             <div className="budget-overview-value" style={{ color: totalBudget - totalSpent > 0 ? '#34d399' : 'var(--color-danger)' }}>
-              {formatAmount(Math.max(0, totalBudget - totalSpent), currency)}
+              {mask(Math.max(0, totalBudget - totalSpent), currency)}
             </div>
           </div>
         </div>
@@ -149,7 +150,7 @@ export default function Budgets() {
         
         {safeDailyTotal > 0 && (
           <div className="budget-daily-guidance">
-            💡 You can spend <strong>{formatAmount(safeDailyTotal, currency)}/day</strong> overall to stay on track.
+            💡 You can spend <strong>{mask(safeDailyTotal, currency)}/day</strong> overall to stay on track.
           </div>
         )}
       </div>
@@ -169,13 +170,13 @@ export default function Budgets() {
             let tierLabel = '';
             if (pct >= 100) {
               tierClass = 'budget-exceeded';
-              tierLabel = `🚨 Over by ${formatAmount(spent - b.amount, currency)}`;
+              tierLabel = `🚨 Over by ${mask(spent - b.amount, currency)}`;
             } else if (pct >= 90) {
               tierClass = 'budget-critical';
-              tierLabel = `⚠ Almost reached — ${formatAmount(remaining, currency)} left`;
+              tierLabel = `⚠ Almost reached — ${mask(remaining, currency)} left`;
             } else if (pct >= 70) {
               tierClass = 'budget-warning';
-              tierLabel = `${formatAmount(remaining, currency)} remaining`;
+              tierLabel = `${mask(remaining, currency)} remaining`;
             }
 
             const isInactive = spent === 0;
@@ -184,7 +185,7 @@ export default function Budgets() {
               <div key={b.id} className={`budget-item card ${tierClass} ${isInactive ? 'budget-inactive' : ''}`} onClick={() => setSelectedBudgetForTxns(b)}>
                 {b.status?.rollover > 0 && (
                   <div className="budget-rollover-badge">
-                    +{formatAmount(b.status.rollover, currency)} rolled over from last month
+                    +{mask(b.status.rollover, currency)} rolled over from last month
                   </div>
                 )}
                 <div className="budget-item-header">
@@ -214,9 +215,9 @@ export default function Budgets() {
                   </div>
                 </div>
                 <div className="budget-item-amounts">
-                  <span className={exceeded ? 'budget-spent-over' : ''}>{formatAmount(spent, currency)}</span>
-                  <span className="budget-item-total">/ {formatAmount(b.status?.totalLimit || b.amount, currency)}</span>
-                  {!exceeded && <span className="budget-item-remaining">Remaining: {formatAmount(remaining, currency)}</span>}
+                  <span className={exceeded ? 'budget-spent-over' : ''}>{mask(spent, currency)}</span>
+                  <span className="budget-item-total">/ {mask(b.status?.totalLimit || b.amount, currency)}</span>
+                  {!exceeded && <span className="budget-item-remaining">Remaining: {mask(remaining, currency)}</span>}
                 </div>
                 <div className="progress-bar">
                   <div
@@ -232,7 +233,7 @@ export default function Budgets() {
                 
                 {(!exceeded && remaining > 0) && (
                   <div className="budget-item-guidance">
-                    Safe to spend: <strong>{formatAmount(remaining / daysLeft, currency)}/day</strong>
+                    Safe to spend: <strong>{mask(remaining / daysLeft, currency)}/day</strong>
                   </div>
                 )}
 
@@ -333,7 +334,7 @@ export default function Budgets() {
                   </div>
                 </div>
                 <div style={{ fontWeight: '700', fontFamily: 'var(--font-heading)' }}>
-                  {formatAmount(t.amount, currency)}
+                  {mask(t.amount, currency)}
                 </div>
               </div>
             ));

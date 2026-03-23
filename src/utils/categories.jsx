@@ -39,4 +39,22 @@ export const CATEGORIES = {
 
 export const getIncomeCategories = () => Object.entries(CATEGORIES).filter(([, c]) => c.type === 'income');
 export const getExpenseCategories = () => Object.entries(CATEGORIES).filter(([, c]) => c.type === 'expense');
-export const getCategoryInfo = (key) => CATEGORIES[key] || { name: 'Unknown', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, type: 'expense', color: 'var(--color-text-muted)' };
+export const getCategoryInfo = (key) => {
+  if (!key) return CATEGORIES.other_expense;
+  const lowerKey = key.toLowerCase();
+  
+  // Try direct lookup
+  if (CATEGORIES[lowerKey]) return CATEGORIES[lowerKey];
+  
+  // Try lookup by name
+  const byName = Object.values(CATEGORIES).find(c => c.name.toLowerCase() === lowerKey);
+  if (byName) return byName;
+  
+  // Final fallback
+  return { 
+    name: 'Other', 
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8v4"/></svg>, 
+    type: 'expense', 
+    color: 'var(--color-text-muted)' 
+  };
+};

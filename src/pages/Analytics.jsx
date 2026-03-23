@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { useDebtStore } from '../stores/useDebtStore';
 import { getCategoryInfo } from '../utils/categories';
 import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import { exportCSV } from '../utils/exportImport';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -23,6 +24,7 @@ export default function Analytics() {
   const transactions = useTransactionStore((s) => s.transactions);
   const currency = useSettingsStore((s) => s.currency);
   const debts = useDebtStore((s) => s.debts);
+  const { mask } = usePrivacy();
 
   const { totalOwedToMe, totalIOwe } = useMemo(() => ({
     totalOwedToMe: debts.filter((d) => d.type === 'owed_to_me' && d.status === 'active').reduce((sum, d) => sum + (d.totalAmount - d.paidAmount), 0),
@@ -179,16 +181,16 @@ export default function Analytics() {
           <div className="debt-analytics-cards">
             <div className="card debt-analytics-card">
               <div className="debt-analytics-label">Total Receivable</div>
-              <div className="debt-analytics-value income">{formatAmount(totalOwedToMe, currency)}</div>
+              <div className="debt-analytics-value income">{mask(totalOwedToMe, currency)}</div>
             </div>
             <div className="card debt-analytics-card">
               <div className="debt-analytics-label">Total Payable</div>
-              <div className="debt-analytics-value expense">{formatAmount(totalIOwe, currency)}</div>
+              <div className="debt-analytics-value expense">{mask(totalIOwe, currency)}</div>
             </div>
             <div className="card debt-analytics-card" style={{ gridColumn: '1 / -1' }}>
               <div className="debt-analytics-label">Net Position</div>
               <div className={`debt-analytics-value ${totalOwedToMe - totalIOwe >= 0 ? 'income' : 'expense'}`}>
-                {formatAmount(totalOwedToMe - totalIOwe, currency)}
+                {mask(totalOwedToMe - totalIOwe, currency)}
               </div>
             </div>
           </div>

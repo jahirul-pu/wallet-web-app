@@ -7,6 +7,7 @@ import { useDebtStore } from '../stores/useDebtStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getCategoryInfo } from '../utils/categories';
 import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import { getMonthKey } from '../utils/dateFormat';
 import { exportCSV } from '../utils/exportImport';
 import './MonthlySummary.css';
@@ -19,6 +20,7 @@ export default function MonthlySummary() {
   const getBudgetStatus = useBudgetStore((s) => s.getBudgetStatus);
   const debts = useDebtStore((s) => s.debts);
   const currency = useSettingsStore((s) => s.currency);
+  const { mask } = usePrivacy();
 
   const now = new Date();
   const currentMonthKey = getMonthKey(now.toISOString());
@@ -145,21 +147,21 @@ export default function MonthlySummary() {
         <div className="ms-score-grid">
           <div className="ms-score-item">
             <div className="ms-score-label">Income</div>
-            <div className="ms-score-value income">{formatAmount(current.income, currency)}</div>
+            <div className="ms-score-value income">{mask(current.income, currency)}</div>
             <div className={`ms-score-change ${pctChange(current.income, previous.income) >= 0 ? 'positive' : 'negative'}`}>
               {pctChange(current.income, previous.income) >= 0 ? '↑' : '↓'} {Math.abs(pctChange(current.income, previous.income))}% vs {prevMonthName}
             </div>
           </div>
           <div className="ms-score-item">
             <div className="ms-score-label">Expense</div>
-            <div className="ms-score-value expense">{formatAmount(current.expense, currency)}</div>
+            <div className="ms-score-value expense">{mask(current.expense, currency)}</div>
             <div className={`ms-score-change ${pctChange(current.expense, previous.expense) <= 0 ? 'positive' : 'negative'}`}>
               {pctChange(current.expense, previous.expense) >= 0 ? '↑' : '↓'} {Math.abs(pctChange(current.expense, previous.expense))}% vs {prevMonthName}
             </div>
           </div>
           <div className="ms-score-item highlight">
             <div className="ms-score-label">Savings</div>
-            <div className={`ms-score-value ${current.savings >= 0 ? 'income' : 'expense'}`}>{formatAmount(current.savings, currency)}</div>
+            <div className={`ms-score-value ${current.savings >= 0 ? 'income' : 'expense'}`}>{mask(current.savings, currency)}</div>
             <div className={`ms-score-change ${pctChange(current.savings, previous.savings) >= 0 ? 'positive' : 'negative'}`}>
               {pctChange(current.savings, previous.savings) >= 0 ? '↑' : '↓'} {Math.abs(pctChange(current.savings, previous.savings))}% vs {prevMonthName}
             </div>
@@ -177,12 +179,12 @@ export default function MonthlySummary() {
           <div className="ms-wallet-row">
             <div className="ms-wallet-item">
               <div className="ms-wallet-label">Current Balance</div>
-              <div className="ms-wallet-value">{formatAmount(walletGrowth.totalBalance, currency)}</div>
+              <div className="ms-wallet-value">{mask(walletGrowth.totalBalance, currency)}</div>
             </div>
             <div className="ms-wallet-item">
               <div className="ms-wallet-label">Net This Month</div>
               <div className={`ms-wallet-value ${walletGrowth.netThisMonth >= 0 ? 'positive' : 'negative'}`}>
-                {walletGrowth.netThisMonth >= 0 ? '+' : ''}{formatAmount(walletGrowth.netThisMonth, currency)}
+                {walletGrowth.netThisMonth >= 0 ? '+' : ''}{mask(walletGrowth.netThisMonth, currency)}
               </div>
             </div>
             <div className="ms-wallet-item">
@@ -214,11 +216,11 @@ export default function MonthlySummary() {
         <div className="ms-budget-summary card">
           <div className="ms-budget-overview-row">
             <div className="ms-budget-stat">
-              <div className="ms-budget-stat-val">{formatAmount(budgetStats.totalBudget, currency)}</div>
+              <div className="ms-budget-stat-val">{mask(budgetStats.totalBudget, currency)}</div>
               <div className="ms-budget-stat-label">Total Budget</div>
             </div>
             <div className="ms-budget-stat">
-              <div className="ms-budget-stat-val">{formatAmount(budgetStats.totalSpent, currency)}</div>
+              <div className="ms-budget-stat-val">{mask(budgetStats.totalSpent, currency)}</div>
               <div className="ms-budget-stat-label">Spent</div>
             </div>
             <div className="ms-budget-stat">
@@ -254,7 +256,7 @@ export default function MonthlySummary() {
         <div className="ms-debt-summary card">
           <div className="ms-debt-stats">
             <div className="ms-debt-stat-item">
-              <div className="ms-debt-stat-val">{formatAmount(debtStats.totalPaymentsThisMonth, currency)}</div>
+              <div className="ms-debt-stat-val">{mask(debtStats.totalPaymentsThisMonth, currency)}</div>
               <div className="ms-debt-stat-label">Payments Made</div>
             </div>
             <div className="ms-debt-stat-item">
@@ -275,7 +277,7 @@ export default function MonthlySummary() {
                     <span className="ms-debt-timeline-person">{p.personName}</span>
                     <span className="ms-debt-timeline-note">{p.note || (p.debtType === 'i_owe' ? 'Paid' : 'Received')}</span>
                   </div>
-                  <div className="ms-debt-timeline-amount">{formatAmount(p.amount, currency)}</div>
+                  <div className="ms-debt-timeline-amount">{mask(p.amount, currency)}</div>
                 </div>
               ))}
             </div>
@@ -309,7 +311,7 @@ export default function MonthlySummary() {
                     </div>
                   </div>
                   <div className="ms-category-right">
-                    <div className="ms-category-amount">{formatAmount(cat.amount, currency)}</div>
+                    <div className="ms-category-amount">{mask(cat.amount, currency)}</div>
                     <div className="ms-category-pct">{pct}%</div>
                   </div>
                 </div>

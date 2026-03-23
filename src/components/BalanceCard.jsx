@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
-import { formatAmount } from '../utils/currencies';
 import { useAnimatedCounter } from '../hooks/useAnimatedCounter';
+import { usePrivacy } from '../hooks/usePrivacy';
 import './BalanceCard.css';
 
 export default function BalanceCard() {
@@ -11,6 +11,7 @@ export default function BalanceCard() {
   const currency = useSettingsStore((s) => s.currency);
   const transactions = useTransactionStore((s) => s.transactions);
   const [timeFilter, setTimeFilter] = useState('month'); // week, month, year
+  const { mask } = usePrivacy();
 
   const { balance, income, expense, sparkData, pctChangeStr, pctChangeColor } = useMemo(() => {
     const now = new Date();
@@ -148,7 +149,7 @@ export default function BalanceCard() {
       <div className="command-card-body">
         <div className="command-col-left">
           <div className="command-label">Total Vault Assets</div>
-          <div className="command-balance">{formatAmount(Math.round(animatedBalance), currency)}</div>
+          <div className="command-balance">{mask(Math.round(animatedBalance), currency)}</div>
           <div className="command-growth">
             <span className={`growth-badge ${pctChangeColor}`}>{pctChangeStr}</span>
             <span className="growth-text">vs last {timeFilter}</span>
@@ -161,7 +162,7 @@ export default function BalanceCard() {
               </span>
               <div className="cmd-stat-info">
                 <div className="cmd-stat-lbl">In ({timeFilter === 'week' ? '1W' : timeFilter === 'month' ? '1M' : '1Y'})</div>
-                <div className="cmd-stat-val">{formatAmount(Math.round(animatedIncome), currency)}</div>
+                <div className="cmd-stat-val">{mask(Math.round(animatedIncome), currency)}</div>
               </div>
             </div>
             <div className="cmd-stat-box">
@@ -170,7 +171,7 @@ export default function BalanceCard() {
               </span>
               <div className="cmd-stat-info">
                 <div className="cmd-stat-lbl">Out ({timeFilter === 'week' ? '1W' : timeFilter === 'month' ? '1M' : '1Y'})</div>
-                <div className="cmd-stat-val">{formatAmount(Math.round(animatedExpense), currency)}</div>
+                <div className="cmd-stat-val">{mask(Math.round(animatedExpense), currency)}</div>
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { useTransactionStore } from '../stores/useTransactionStore';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getIncomeCategories, getExpenseCategories } from '../utils/categories';
-import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import TransactionItem from '../components/TransactionItem';
 import './Transactions.css';
 
@@ -16,6 +16,7 @@ export default function Transactions() {
   const currency = useSettingsStore((s) => s.currency);
   const location = useLocation();
   const navigate = useNavigate();
+  const { mask } = usePrivacy();
 
   const handleDelete = (id) => {
     const txn = transactions.find(t => t.id === id);
@@ -182,7 +183,7 @@ export default function Transactions() {
     if (filterType === 'income' || (filterType === 'all' && todayIncome > 0 && todayIncome >= todayExp)) {
       const incCount = todayTxns.filter(t => t.type === 'income').length;
       if (incCount > 0) {
-        text = `You received ${incCount} payment${incCount > 1 ? 's' : ''} today (+${formatAmount(todayIncome, currency)})`;
+        text = `You received ${incCount} payment${incCount > 1 ? 's' : ''} today (+${mask(todayIncome, currency)})`;
         icon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
         if (yesIncome > 0) {
           const pct = Math.round(((todayIncome - yesIncome) / yesIncome) * 100);
@@ -196,7 +197,7 @@ export default function Transactions() {
     if (!text && (filterType === 'expense' || (filterType === 'all' && todayExp > 0))) {
       const expCount = todayTxns.filter(t => t.type === 'expense').length;
       if (expCount > 0) {
-        text = `You spent ${formatAmount(todayExp, currency)} today across ${expCount} transaction${expCount > 1 ? 's' : ''}`;
+        text = `You spent ${mask(todayExp, currency)} today across ${expCount} transaction${expCount > 1 ? 's' : ''}`;
         icon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 12 12 14 14"></polyline></svg>;
         if (yesExp > 0) {
           const pct = Math.round(((todayExp - yesExp) / yesExp) * 100);
@@ -209,7 +210,7 @@ export default function Transactions() {
       const totalAmt = filtered.reduce((s,t) => s + t.amount, 0);
       text = `Tracking ${filtered.length} total transactions in this view`;
       if (filterType !== 'all') {
-         subText = `Total aggregate volume: ${formatAmount(totalAmt, currency)}`;
+         subText = `Total aggregate volume: ${mask(totalAmt, currency)}`;
       }
     }
 
@@ -319,7 +320,7 @@ export default function Transactions() {
               <div className="transaction-group-date">
                 <span>{new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                 <span className={`daily-net ${dailyTotal > 0 ? 'positive' : dailyTotal < 0 ? 'negative' : ''}`}>
-                  {dailyTotal > 0 ? '+' : dailyTotal < 0 ? '-' : ''}{formatAmount(Math.abs(dailyTotal), currency)}
+                  {dailyTotal > 0 ? '+' : dailyTotal < 0 ? '-' : ''}{mask(Math.abs(dailyTotal), currency)}
                 </span>
               </div>
             <div className="transaction-list-column" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

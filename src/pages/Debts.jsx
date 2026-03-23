@@ -3,7 +3,7 @@ import { useDebtStore } from '../stores/useDebtStore';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
-import { formatAmount } from '../utils/currencies';
+import { usePrivacy } from '../hooks/usePrivacy';
 import { formatDate, isOverdue, daysUntil, toInputDate } from '../utils/dateFormat';
 import { getAccountIcon } from '../utils/accountIcons';
 import BottomSheet from '../components/BottomSheet';
@@ -23,6 +23,7 @@ export default function Debts() {
   const accounts = useAccountStore((s) => s.accounts);
   const adjustBalance = useAccountStore((s) => s.adjustBalance);
   const addTransaction = useTransactionStore((s) => s.addTransaction);
+  const { mask } = usePrivacy();
 
   const { totalOwedToMe, totalIOwe } = useMemo(() => ({
     totalOwedToMe: debts.filter((d) => d.type === 'owed_to_me' && d.status === 'active').reduce((sum, d) => sum + (d.totalAmount - d.paidAmount), 0),
@@ -165,19 +166,19 @@ export default function Debts() {
               <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               You'll Receive
             </div>
-            <div className="debt-summary-value income">{formatAmount(totalOwedToMe, currency)}</div>
+            <div className="debt-summary-value income">{mask(totalOwedToMe, currency)}</div>
           </div>
           <div className="debt-summary-card card">
             <div className="debt-summary-label">
               <svg style={{display:'inline-block', verticalAlign:'middle', marginRight:'6px'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               You Owe
             </div>
-            <div className="debt-summary-value expense">{formatAmount(totalIOwe, currency)}</div>
+            <div className="debt-summary-value expense">{mask(totalIOwe, currency)}</div>
           </div>
         </div>
         <div className={`debt-net-position ${netPosition >= 0 ? 'positive' : 'negative'}`}>
           <span className="net-label">Net Position</span>
-          <span className="net-value">{netPosition >= 0 ? '+' : ''}{formatAmount(netPosition, currency)}</span>
+          <span className="net-value">{netPosition >= 0 ? '+' : ''}{mask(netPosition, currency)}</span>
         </div>
       </div>
 
@@ -200,7 +201,7 @@ export default function Debts() {
                   setTimeout(() => el?.classList.remove('highlight-flash'), 2000);
                 }}>
                   <div className="alert-item-time">{isToday ? 'TODAY' : 'TOMORROW'}</div>
-                  <div className="alert-item-text">{d.type === 'i_owe' ? 'Pay' : 'Collect from'} <strong>{d.personName}</strong>: {formatAmount(d.totalAmount - d.paidAmount, currency)}</div>
+                  <div className="alert-item-text">{d.type === 'i_owe' ? 'Pay' : 'Collect from'} <strong>{d.personName}</strong>: {mask(d.totalAmount - d.paidAmount, currency)}</div>
                 </div>
               );
             })}
@@ -260,8 +261,8 @@ export default function Debts() {
                     <div className="debt-card-date">Since {formatDate(d.createdAt)}</div>
                   </div>
                   <div className="debt-card-amount">
-                    {formatAmount(remaining, currency)}
-                    <div className="debt-card-total">of {formatAmount(d.totalAmount, currency)}</div>
+                    {mask(remaining, currency)}
+                    <div className="debt-card-total">of {mask(d.totalAmount, currency)}</div>
                   </div>
                 </div>
 
@@ -270,7 +271,7 @@ export default function Debts() {
                 <div className="debt-progress-section">
                   <div className="debt-progress-labels">
                     <span className="debt-progress-paid">
-                      {formatAmount(d.paidAmount, currency)} <span className="debt-progress-of">/ {formatAmount(d.totalAmount, currency)}</span>
+                      {mask(d.paidAmount, currency)} <span className="debt-progress-of">/ {mask(d.totalAmount, currency)}</span>
                     </span>
                     <span className={`debt-progress-pct ${pct >= 100 ? 'complete' : pct >= 75 ? 'high' : ''}`}>
                       {Math.round(pct)}% paid
@@ -284,7 +285,7 @@ export default function Debts() {
                   </div>
                   {remaining > 0 && (
                     <div className="debt-progress-remaining">
-                      Remaining: <strong>{formatAmount(remaining, currency)}</strong>
+                      Remaining: <strong>{mask(remaining, currency)}</strong>
                     </div>
                   )}
                 </div>
@@ -341,7 +342,7 @@ export default function Debts() {
                             <div className="timeline-content">
                               <div className="timeline-row">
                                 <span className="timeline-label">Initial Amount</span>
-                                <span className="timeline-value">{formatAmount(d.totalAmount, currency)}</span>
+                                <span className="timeline-value">{mask(d.totalAmount, currency)}</span>
                               </div>
                             </div>
                           </div>
@@ -358,11 +359,11 @@ export default function Debts() {
                                 <div className="timeline-content">
                                   <div className="timeline-row">
                                     <span className="timeline-date">{formatDate(p.date)}</span>
-                                    <span className="timeline-amount">{formatAmount(p.amount, currency)}</span>
+                                    <span className="timeline-amount">{mask(p.amount, currency)}</span>
                                   </div>
                                   {p.note && <div className="timeline-note">{p.note}</div>}
                                   <div className="timeline-remaining">
-                                    Remaining: {formatAmount(Math.max(0, currentRunningBalance), currency)}
+                                    Remaining: {mask(Math.max(0, currentRunningBalance), currency)}
                                   </div>
                                   <div className="timeline-actions">
                                     <button onClick={() => openEditPaySheet(d, p)}>Edit</button>
@@ -385,7 +386,7 @@ export default function Debts() {
                       + Payment
                     </button>
                     <button className="btn btn-secondary btn-sm" onClick={() => markAsPaid(d.id)}>
-                      Settle {formatAmount(remaining, currency)}
+                      Settle {mask(remaining, currency)}
                     </button>
                     <div className="debt-more-menu-wrapper">
                       <button
@@ -512,7 +513,7 @@ export default function Debts() {
       <BottomSheet isOpen={showPaySheet} onClose={() => { setShowPaySheet(false); setSelectedPaymentId(null); }} title={selectedPaymentId ? `Edit Payment for ${selectedDebt?.personName}` : `Pay ${selectedDebt?.personName || ''}`}>
         <div className="sheet-form">
           <div style={{ textAlign: 'center', marginBottom: 'var(--space-2)' }}>
-            <div className="debt-card-total">Remaining: {formatAmount((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0) + (selectedPaymentId ? selectedDebt?.payments.find(p => p.id === selectedPaymentId)?.amount || 0 : 0), currency)}</div>
+            <div className="debt-card-total">Remaining: {mask((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0) + (selectedPaymentId ? selectedDebt?.payments.find(p => p.id === selectedPaymentId)?.amount || 0 : 0), currency)}</div>
           </div>
           <div className="input-group"><label>Payment Amount</label><CalculatorInput value={payAmount} onChange={setPayAmount} /></div>
           <div className="input-group" style={{ position: 'relative', zIndex: 8 }}><label>Date</label><DatePicker value={payDate} onChange={setPayDate} /></div>

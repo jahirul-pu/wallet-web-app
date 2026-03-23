@@ -5,6 +5,7 @@ import { useAccountStore } from '../stores/useAccountStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useDebtStore } from '../stores/useDebtStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { usePrivacy } from '../hooks/usePrivacy';
 import logoImg from '../assets/logo.png';
 import './Sidebar.css';
 
@@ -137,6 +138,7 @@ export default function Sidebar() {
   const transactions = useTransactionStore((s) => s.transactions);
   const debts = useDebtStore((s) => s.debts);
   const currency = useSettingsStore((s) => s.currency);
+  const { maskText } = usePrivacy();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
   });
@@ -192,10 +194,10 @@ export default function Sidebar() {
       <div className="sidebar-status-card">
         <div className="sidebar-status-label">Vault Balance</div>
         <div className="sidebar-status-amount">
-          {currency?.symbol || '৳'}{fmt(totalBalance)}
+          {maskText(`${currency?.symbol || '৳'}${fmt(totalBalance)}`)}
         </div>
         <div className={`sidebar-status-net ${monthlyNet >= 0 ? 'positive' : 'negative'}`}>
-          {monthlyNet >= 0 ? '↑' : '↓'} {currency?.symbol || '৳'}{fmt(monthlyNet)} this month
+          {monthlyNet >= 0 ? '↑' : '↓'} {maskText(`${currency?.symbol || '৳'}${fmt(monthlyNet)}`)} this month
         </div>
       </div>
 
