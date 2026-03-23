@@ -294,8 +294,9 @@ export default function Accounts() {
 
         const renderWalletCard = ({ acc, index }, isPrimary) => {
           const stats = walletStats[acc.id] || { count: 0, lastUsedLabel: 'Never', activity: 'inactive' };
+          const isZero = acc.balance === 0;
           return (
-            <div key={acc.id} className={`account-card card ${isPrimary ? 'primary-wallet' : ''}`}>
+            <div key={acc.id} className={`account-card card ${isPrimary ? 'primary-wallet' : ''} ${isZero ? 'inactive-wallet' : 'active-wallet'}`}>
               <div className="account-card-top">
                 <div className="account-card-left" onClick={() => openEditSheet(acc)} style={{ cursor: 'pointer', flex: 1 }}>
                   <div className="account-card-icon-wrap">

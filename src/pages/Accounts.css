@@ -114,6 +114,39 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  transition: transform var(--transition-short), box-shadow var(--transition-short), border-color var(--transition-short), opacity var(--transition-short), filter var(--transition-short), background var(--transition-short);
+}
+
+/* Visual Hierarchy: Active Wallets */
+.account-card.active-wallet {
+  box-shadow: var(--shadow-sm);
+}
+
+.account-card.active-wallet:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.account-card.active-wallet:not(.primary-wallet):hover {
+  border-color: rgba(99, 102, 241, 0.3); /* Subtle primary color tint */
+}
+
+/* Visual Hierarchy: Zero-Balance (Inactive) Wallets */
+.account-card.inactive-wallet {
+  opacity: 0.65;
+  filter: grayscale(50%);
+  background: var(--color-bg-base);
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.account-card.inactive-wallet:hover {
+  opacity: 1;
+  filter: grayscale(0%);
+  background: var(--color-bg-card);
+  border-style: solid;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .account-card.primary-wallet {
