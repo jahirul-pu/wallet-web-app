@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [qaCategory, setQaCategory] = useState('food');
   const [qaSuccess, setQaSuccess] = useState(false);
   const [qaExpanded, setQaExpanded] = useState(false);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState('month'); // 'week', 'month', 'last_month'
 
   const qaCategoryList = useMemo(() => {
     return qaType === 'income' ? getIncomeCategories() : getExpenseCategories();
@@ -86,7 +87,7 @@ export default function Dashboard() {
     }, 1500);
   };
 
-  const currentMonth = getMonthKey(new Date().toISOString());
+  const currentMonth = getMonthKey(toInputDate());
 
   // Derive debt summaries from raw debts array (avoids getSnapshot loop in React 19)
   const { overdueDebts, totalOwedToMe, totalIOwe } = useMemo(() => {
@@ -125,14 +126,33 @@ export default function Dashboard() {
     return { balance: bal, income: inc, expense: exp, recentTxns: recent };
   }, [transactions, currentMonth]);
 
+  // Smoothed path helper (Cubic Bezier)
+  const getCurvePath = (data, accessor, max, width = 100, height = 40) => {
+    if (!data.length) return '';
+    const points = data.map((d, i) => ({
+      x: (i / (data.length - 1)) * width,
+      y: height - (accessor(d) / max) * (height * 0.85) - 2
+    }));
+
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i];
+        const p1 = points[i + 1];
+        const cp1x = p0.x + (p1.x - p0.x) / 2;
+        const cp2x = p0.x + (p1.x - p0.x) / 2;
+        path += ` C ${cp1x} ${p0.y}, ${cp2x} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+    return path;
+  };
+
   // ── Contextual data for summary cards ──
   const cardContext = useMemo(() => {
     const sym = currency?.symbol || '৳';
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = toInputDate(now);
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = toInputDate(yesterday);
 
     // Balance change since yesterday
     const todayNet = transactions
@@ -178,27 +198,50 @@ export default function Dashboard() {
   // Analytics computations
   const analytics = useMemo(() => {
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMo = now.getMonth();
+    let startDate, endDate;
+
+    if (analyticsPeriod === 'week') {
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 7);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(now);
+      endDate.setHours(23, 59, 59, 999);
+    } else if (analyticsPeriod === 'last_month') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    } else {
+      // Default: This Month
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now);
+      endDate.setHours(23, 59, 59, 999);
+    }
     
     let biggestTxn = null;
     const catMap = {};
-    const monthTxns = transactions.filter((t) => {
-      const d = new Date(t.date);
-      return d.getFullYear() === currentYear && d.getMonth() === currentMo;
+    let totalIncomeAmt = 0;
+    
+    const startStr = toInputDate(startDate);
+    const endStr = toInputDate(endDate);
+
+    const filterTxns = transactions.filter((t) => {
+      return t.date >= startStr && t.date <= endStr;
     });
 
-    monthTxns.forEach(t => {
+    filterTxns.forEach(t => {
       if (t.type === 'expense') {
         const cat = t.category || 'other_expense';
         catMap[cat] = (catMap[cat] || 0) + t.amount;
         if (!biggestTxn || t.amount > biggestTxn.amount) {
            biggestTxn = t;
         }
+      } else if (t.type === 'income') {
+        totalIncomeAmt += t.amount;
       }
     });
 
     const totalExpenseAmt = Object.values(catMap).reduce((s, v) => s + v, 0);
+    const netFlow = totalIncomeAmt - totalExpenseAmt;
+    const savingsRate = totalIncomeAmt > 0 ? Math.round((netFlow / totalIncomeAmt) * 100) : 0;
     
     let startPercent = 0;
     const pieSegments = Object.entries(catMap)
@@ -220,31 +263,52 @@ export default function Dashboard() {
 
     const topCategory = pieSegments.length > 0 ? pieSegments[0] : null;
 
+    // Line chart data (4 points)
     const weeksData = [];
     let maxVal = 1;
-    for (let w = 3; w >= 0; w--) {
-       const startDay = new Date(now);
-       startDay.setHours(0,0,0,0);
-       startDay.setDate(now.getDate() - (w * 7) - 6);
-       
-       const endDay = new Date(now);
-       endDay.setHours(23,59,59,999);
-       endDay.setDate(now.getDate() - (w * 7));
+    const rangeMs = endDate - startDate;
+    const stepMs = rangeMs / 3;
 
-       const wTxns = transactions.filter(t => {
+    for (let i = 0; i <= 3; i++) {
+       const stepEnd = new Date(startDate.getTime() + (i * stepMs));
+       const stepStart = i === 0 ? startDate : new Date(startDate.getTime() + ((i-1) * stepMs));
+       
+       const stepTxns = transactions.filter(t => {
           const d = new Date(t.date);
-          return d >= startDay && d <= endDay;
+          return d >= stepStart && d <= stepEnd;
        });
        
-       const inc = wTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-       const exp = wTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+       const inc = stepTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+       const exp = stepTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+       const net = inc - exp;
        
-       maxVal = Math.max(maxVal, inc, exp);
-       weeksData.push({ label: `W${4-w}`, inc, exp });
+       maxVal = Math.max(maxVal, inc, exp, Math.abs(net));
+       weeksData.push({ label: `P${i+1}`, inc, exp, net });
     }
 
-    return { totalExpenseAmt, biggestTxn, pieSegments, topCategory, weeksData, maxVal };
-  }, [transactions]);
+    // Smart Warnings
+    const warnings = [];
+    if (topCategory && topCategory.percent > 50) {
+      warnings.push(`Spending highly concentrated in ${topCategory.name} (${topCategory.percent}%)`);
+    }
+    if (biggestTxn && totalExpenseAmt > 0 && (biggestTxn.amount / totalExpenseAmt) > 0.3) {
+      warnings.push(`Single high transaction detected: ${biggestTxn.note || 'Expense'}`);
+    }
+
+    return { 
+      totalExpenseAmt, 
+      totalIncomeAmt, 
+      netFlow, 
+      savingsRate, 
+      biggestTxn, 
+      pieSegments, 
+      topCategory, 
+      weeksData, 
+      maxVal,
+      warnings,
+      periodLabel: analyticsPeriod === 'week' ? 'Past 7 Days' : analyticsPeriod === 'last_month' ? 'Last Month' : 'This Month'
+    };
+  }, [transactions, analyticsPeriod]);
 
   // Previous month data for % change comparison
   const prevMonth = useMemo(() => {
@@ -739,46 +803,150 @@ export default function Dashboard() {
           </div>
 
           {/* Analytics Section */}
-          <div className="dashboard-section" style={{ animationDelay: '0.35s' }}>
+          <div className="dashboard-section analytics-section" style={{ animationDelay: '0.35s' }}>
             <div className="dashboard-section-header">
-              <h2 className="dashboard-section-title">Analytics</h2>
-              <span className="analytics-period-badge">This Month</span>
-            </div>
-            
-            {/* 1. Category Insights */}
-            <div className="analytics-insights-row">
-              <div className="analytics-insight-card card">
-                <span className="insight-card-label">Top Category</span>
-                <div className="insight-card-val">{analytics.topCategory ? analytics.topCategory.name : 'None'}</div>
-                <div className="insight-card-sub">{analytics.topCategory ? `${analytics.topCategory.percent}% of spending` : '-'}</div>
-              </div>
-              <div className="analytics-insight-card card">
-                <span className="insight-card-label">Biggest Expense</span>
-                <div className="insight-card-val">{analytics.biggestTxn ? (analytics.biggestTxn.note || getCategoryInfo(analytics.biggestTxn.category).name) : 'None'}</div>
-                <div className="insight-card-sub">{analytics.biggestTxn ? <AnimatedAmount value={analytics.biggestTxn.amount} currency={currency} /> : '-'}</div>
+              <h2 className="dashboard-section-title">Analytics Insight</h2>
+              <div className="analytics-filters">
+                 {['week', 'month', 'last_month'].map(p => (
+                   <button 
+                     key={p} 
+                     className={`filter-chip ${analyticsPeriod === p ? 'active' : ''}`}
+                     onClick={() => setAnalyticsPeriod(p)}
+                   >
+                     {p === 'week' ? 'Past 7D' : p === 'month' ? 'This Month' : 'Last Month'}
+                   </button>
+                 ))}
               </div>
             </div>
 
-            {/* 2. Income vs Expense Trend (Line) */}
+            {/* Smart Summary Layer */}
+            <div className="analytics-smart-summary card">
+               <div className="summary-header">
+                  <span className="summary-period">{analytics.periodLabel} Summary</span>
+               </div>
+               <div className="summary-bullets">
+                  <div className="summary-bullet">
+                    <span className="bullet-icon">📊</span>
+                    <span className="bullet-text">
+                       {analytics.totalExpenseAmt > 0 ? (
+                         <>You spent most on <strong>{analytics.topCategory?.name}</strong> ({analytics.topCategory?.percent}%)</>
+                       ) : 'No expenses recorded in this period.'}
+                    </span>
+                  </div>
+                  <div className="summary-bullet">
+                    <span className="bullet-icon">📈</span>
+                    <span className="bullet-text">
+                       {analyticsPeriod === 'month' && (
+                         <>Spending <strong>{pctChange(analytics.totalExpenseAmt, prevMonth.expense) > 0 ? 'increased' : 'decreased'}</strong> vs last month</>
+                       )}
+                       {analyticsPeriod !== 'month' && <>Spending is <strong>{analytics.totalExpenseAmt > 0 ? 'active' : 'stable'}</strong></>}
+                    </span>
+                  </div>
+                  {analytics.biggestTxn && (
+                    <div className="summary-bullet clickable" onClick={() => navigate('/transactions')}>
+                      <span className="bullet-icon">💰</span>
+                      <span className="bullet-text">Biggest single expense: <strong><AnimatedAmount value={analytics.biggestTxn.amount} currency={currency} /></strong> ({analytics.biggestTxn.note || 'Lent/Expense'})</span>
+                    </div>
+                  )}
+               </div>
+               {analytics.warnings.map((w, i) => (
+                 <div key={i} className="analytics-warning-msg">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    {w}
+                 </div>
+               ))}
+            </div>
+            
+            <div className="analytics-insights-row">
+              <div className="analytics-insight-card card clickable" onClick={() => navigate('/transactions')}>
+                <span className="insight-card-label">Savings Insight</span>
+                <div className="insight-card-val"><AnimatedAmount value={analytics.netFlow} currency={currency} /></div>
+                <div className="insight-card-sub">{analytics.savingsRate}% savings rate</div>
+              </div>
+              <div className="analytics-insight-card card clickable" onClick={() => navigate('/transactions?type=expense')}>
+                <span className="insight-card-label">Total Spent</span>
+                <div className="insight-card-val"><AnimatedAmount value={analytics.totalExpenseAmt} currency={currency} /></div>
+                <div className="insight-card-sub">{analytics.pieSegments.length} categories</div>
+              </div>
+            </div>
+
+            {/* 2. Enhanced Cashflow Trend */}
             <div className="analytics-trend-chart card">
               <div className="analytics-card-header">
                  <span>Cashflow Trend</span>
                  <div className="analytics-legend">
                     <span className="legend-dot income"></span> Income
                     <span className="legend-dot expense"></span> Expense
+                    <span className="legend-dot net"></span> Net
                  </div>
               </div>
-              <div className="analytics-line-wrapper">
+              <div className="chart-quick-summary">
+                 <div className="qs-item">
+                    <span className="qs-lbl">Income</span>
+                    <span className="qs-val income">{mask(analytics.totalIncomeAmt, currency)}</span>
+                 </div>
+                 <div className="qs-item">
+                    <span className="qs-lbl">Expense</span>
+                    <span className="qs-val expense">{mask(analytics.totalExpenseAmt, currency)}</span>
+                 </div>
+                 <div className="qs-item">
+                    <span className="qs-lbl">Net Flow</span>
+                    <span className="qs-val" style={{ color: analytics.netFlow >= 0 ? '#10b981' : '#f43f5e' }}>{mask(analytics.netFlow, currency)}</span>
+                 </div>
+              </div>
+              <div className="analytics-line-wrapper enhanced modern">
                  <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="analytics-svg-line">
-                   {/* Draw lines */}
-                   <polyline 
-                      points={analytics.weeksData.map((w, i) => `${(i / 3) * 100},${40 - (w.inc / analytics.maxVal) * 35}`).join(' ')} 
-                      fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" 
+                   <defs>
+                      <linearGradient id="grad-inc" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.15" />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                      </linearGradient>
+                      <linearGradient id="grad-exp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.1" />
+                        <stop offset="100%" stopColor="#f43f5e" stopOpacity="0" />
+                      </linearGradient>
+                      <linearGradient id="grad-net" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.1" />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                      </linearGradient>
+                   </defs>
+                   
+                   {/* Smoothed Area Fills */}
+                   <path 
+                      d={`${getCurvePath(analytics.weeksData, (d) => d.inc, analytics.maxVal)} L 100 40 L 0 40 Z`}
+                      fill="url(#grad-inc)"
                    />
-                   <polyline 
-                      points={analytics.weeksData.map((w, i) => `${(i / 3) * 100},${40 - (w.exp / analytics.maxVal) * 35}`).join(' ')} 
-                      fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" 
+                   <path 
+                      d={`${getCurvePath(analytics.weeksData, (d) => d.exp, analytics.maxVal)} L 100 40 L 0 40 Z`}
+                      fill="url(#grad-exp)"
                    />
+                   
+                   {/* Smoothed Lines */}
+                   <path 
+                      d={getCurvePath(analytics.weeksData, (d) => d.inc, analytics.maxVal)}
+                      fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke"
+                   />
+                   <path 
+                      d={getCurvePath(analytics.weeksData, (d) => d.exp, analytics.maxVal)}
+                      fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke"
+                   />
+                   <path 
+                      d={getCurvePath(analytics.weeksData, (d) => d.net, analytics.maxVal)}
+                      fill="none" stroke="#6366f1" strokeWidth="2" strokeDasharray="3 3" strokeLinecap="round" vectorEffect="non-scaling-stroke"
+                   />
+
+                   {/* Point Highlights */}
+                   {analytics.weeksData.map((d, i) => {
+                      const x = (i / (analytics.weeksData.length - 1)) * 100;
+                      const yInc = 40 - (d.inc / analytics.maxVal) * 34 - 2;
+                      const yExp = 40 - (d.exp / analytics.maxVal) * 34 - 2;
+                      return (
+                        <g key={i}>
+                           <circle cx={x} cy={yInc} r="1" fill="#10b981" stroke="#fff" strokeWidth="0.5" />
+                           <circle cx={x} cy={yExp} r="1" fill="#f43f5e" stroke="#fff" strokeWidth="0.5" />
+                        </g>
+                      );
+                   })}
                  </svg>
                  <div className="analytics-x-axis">
                    {analytics.weeksData.map((w, i) => <span key={i}>{w.label}</span>)}
@@ -786,51 +954,78 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 3. Spending Breakdown (Pie/Donut) */}
-            {analytics.pieSegments.length > 0 && (
-              <div className="analytics-breakdown card">
-                <div className="analytics-card-header">
-                  <span>Spending Breakdown</span>
+            {/* 3. Deep Spending Breakdown */}
+            <div className="analytics-breakdown card">
+              <div className="analytics-card-header">
+                <span>Spending Breakdown</span>
+                <span className="header-sub">{analytics.periodLabel}</span>
+              </div>
+              <div className="analytics-pie-row">
+                <div className="analytics-pie-container">
+                  <svg viewBox="0 0 100 100" className="analytics-donut modern">
+                    {/* Ring background for modern depth */}
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--color-bg-input)" strokeWidth="12" />
+                    
+                    {analytics.pieSegments.map((seg, i) => {
+                       const r = 40;
+                       const c = 2 * Math.PI * r;
+                       // Add a 2% gap between segments
+                       const gap = analytics.pieSegments.length > 1 ? 1.5 : 0;
+                       const strokeDasharray = `${(seg.percent * c) / 100 - gap} ${c}`;
+                       const strokeDashoffset = -(seg.startPercent * c) / 100;
+                       return (
+                         <circle 
+                           key={seg.key}
+                           cx="50" cy="50" r={r} 
+                           fill="transparent" 
+                           stroke={seg.color} 
+                           strokeWidth="12" 
+                           strokeDasharray={strokeDasharray} 
+                           strokeDashoffset={strokeDashoffset}
+                           strokeLinecap="round"
+                         />
+                       )
+                    })}
+                  </svg>
+                  <div className="analytics-donut-center">
+                     <span className="donut-total"><AnimatedAmount value={analytics.totalExpenseAmt} currency={currency} /></span>
+                     <span className="donut-lbl">Spent</span>
+                  </div>
                 </div>
-                <div className="analytics-pie-row">
-                  <div className="analytics-pie-container">
-                    <svg viewBox="0 0 100 100" className="analytics-donut">
-                      {analytics.pieSegments.map((seg, i) => {
-                         const r = 40;
-                         const c = 2 * Math.PI * r;
-                         const strokeDasharray = `${(seg.percent * c) / 100} ${c}`;
-                         const strokeDashoffset = -(seg.startPercent * c) / 100;
-                         return (
-                           <circle 
-                             key={seg.key}
-                             cx="50" cy="50" r={r} 
-                             fill="transparent" 
-                             stroke={seg.color} 
-                             strokeWidth="12" 
-                             strokeDasharray={strokeDasharray} 
-                             strokeDashoffset={strokeDashoffset}
-                             strokeLinecap="round"
-                           />
-                         )
-                      })}
-                    </svg>
-                    <div className="analytics-donut-center">
-                       <span className="donut-total"><AnimatedAmount value={analytics.totalExpenseAmt} currency={currency} /></span>
-                       <span className="donut-lbl">Total Spent</span>
+                <div className="analytics-pie-legend">
+                  {analytics.pieSegments.slice(0, 5).map((seg) => (
+                    <div className="pie-legend-item clickable" key={seg.key} onClick={() => navigate(`/transactions?category=${seg.key}`)}>
+                      <div className="pie-legend-color" style={{ background: seg.color }}></div>
+                      <div className="pie-legend-name">{seg.name}</div>
+                      <div className="pie-legend-amount">{mask(seg.amount, currency)}</div>
+                      <div className="pie-legend-pct">{seg.percent}%</div>
                     </div>
-                  </div>
-                  <div className="analytics-pie-legend">
-                    {analytics.pieSegments.map((seg) => (
-                      <div className="pie-legend-item" key={seg.key}>
-                        <div className="pie-legend-color" style={{ background: seg.color }}></div>
-                        <div className="pie-legend-name">{seg.name}</div>
-                        <div className="pie-legend-pct">{seg.percent}%</div>
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* 4. Where Money Went Section */}
+            <div className="analytics-top-list card section-spacing">
+               <div className="analytics-card-header">
+                  <span>Where Money Went</span>
+                  <button className="btn-link" onClick={() => navigate('/transactions')}>View All</button>
+               </div>
+               <div className="top-spending-items">
+                  {analytics.pieSegments.slice(0, 3).map((seg, i) => (
+                    <div key={seg.key} className="top-spending-row" onClick={() => navigate(`/transactions?category=${seg.key}`)}>
+                        <div className="ts-rank">{i + 1}</div>
+                        <div className="ts-info">
+                           <div className="ts-name">{seg.name}</div>
+                           <div className="ts-bar-wrap">
+                              <div className="ts-bar-fill" style={{ width: `${seg.percent}%`, background: seg.color }}></div>
+                           </div>
+                        </div>
+                        <div className="ts-amount">{mask(seg.amount, currency)}</div>
+                    </div>
+                  ))}
+               </div>
+            </div>
           </div>
         </div>
 

@@ -191,7 +191,7 @@ export default function Debts() {
           </div>
           <div className="reminders-alert-list">
             {activeReminders.map(d => {
-              const today = new Date().toISOString().split('T')[0];
+              const today = toInputDate();
               const isToday = d.dueDate === today;
               return (
                 <div key={d.id} className="reminders-alert-item" onClick={() => {

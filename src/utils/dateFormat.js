@@ -38,6 +38,10 @@ export const formatMonth = (dateStr) => {
 };
 
 export const getMonthKey = (dateStr) => {
+  if (typeof dateStr === 'string' && dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    return `${parts[0]}-${parts[1].padStart(2, '0')}`;
+  }
   const d = new Date(dateStr);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
@@ -56,5 +60,8 @@ export const daysUntil = (dateStr) => {
 
 export const toInputDate = (date) => {
   const d = date ? new Date(date) : new Date();
-  return d.toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };

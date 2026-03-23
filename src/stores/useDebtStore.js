@@ -3,6 +3,14 @@ import { persist } from 'zustand/middleware';
 
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
+const getLocalToday = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const useDebtStore = create(
   persist(
     (set, get) => ({
@@ -22,7 +30,7 @@ export const useDebtStore = create(
           status: 'active', // 'active' | 'paid'
           payments: [],
           reminders: data.reminders || { oneDayBefore: true, onDueDate: true },
-          createdAt: new Date().toISOString(),
+          createdAt: getLocalToday(),
         };
         set((state) => ({
           debts: [debt, ...state.debts],
@@ -40,7 +48,7 @@ export const useDebtStore = create(
               id: generateId(),
               amount: amt,
               note,
-              date: dateStr ? dateStr.split('T')[0] : new Date().toISOString().split('T')[0],
+              date: dateStr ? dateStr.split('T')[0] : getLocalToday(),
             };
             return {
               ...d,
@@ -119,7 +127,7 @@ export const useDebtStore = create(
               id: generateId(),
               amount: remaining,
               note: 'Settled',
-              date: new Date().toISOString().split('T')[0],
+              date: getLocalToday(),
             };
             return {
               ...d,
@@ -155,8 +163,10 @@ export const useDebtStore = create(
       importDebts: (data) => set({ debts: data }),
 
       getActiveReminders: () => {
-        const today = new Date().toISOString().split('T')[0];
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const today = getLocalToday();
+        const dTomorrow = new Date();
+        dTomorrow.setDate(dTomorrow.getDate() + 1);
+        const tomorrow = `${dTomorrow.getFullYear()}-${String(dTomorrow.getMonth() + 1).padStart(2, '0')}-${String(dTomorrow.getDate()).padStart(2, '0')}`;
         
         return get().debts.filter(d => {
           if (d.status !== 'active' || !d.dueDate) return false;

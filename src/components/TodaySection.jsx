@@ -6,7 +6,7 @@ import { useBudgetStore } from '../stores/useBudgetStore';
 import { useDebtStore } from '../stores/useDebtStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { usePrivacy } from '../hooks/usePrivacy';
-import { getMonthKey } from '../utils/dateFormat';
+import { getMonthKey, toInputDate } from '../utils/dateFormat';
 import { getCategoryInfo } from '../utils/categories';
 import './TodaySection.css';
 
@@ -21,8 +21,8 @@ export default function TodaySection() {
   const { mask } = usePrivacy();
 
   const now = new Date();
-  const todayDateStr = now.toISOString().split('T')[0];
-  const currentMonthKey = getMonthKey(now.toISOString());
+  const todayDateStr = toInputDate(now);
+  const currentMonthKey = getMonthKey(toInputDate(now));
 
   const data = useMemo(() => {
     // 1. Spent / Received Today
