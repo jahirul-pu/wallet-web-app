@@ -7,6 +7,7 @@ import { useDebtStore } from '../stores/useDebtStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { usePrivacy } from '../hooks/usePrivacy';
 import { getMonthKey } from '../utils/dateFormat';
+import { getCategoryInfo } from '../utils/categories';
 import './TodaySection.css';
 
 export default function TodaySection() {
@@ -33,7 +34,7 @@ export default function TodaySection() {
     const pendingTxns = transactions.filter((t) => {
       const tdate = new Date(t.date);
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      return tdate > startOfToday && t.date !== todayDateStr; // strictly future
+      return tdate > startOfToday && t.date !== todayDateStr;
     });
 
     // 3. Debts due soon (Next 7 days + overdue)
@@ -78,6 +79,22 @@ export default function TodaySection() {
     const daysLeft = Math.max(1, daysInMonth - now.getDate() + 1);
     const safeDailyTotal = Math.max(0, (totalBudget - totalSpent) / daysLeft);
 
+    // 6. Today's category breakdown
+    const todayCatMap = {};
+    todayTxns.forEach((t) => {
+      if (t.type === 'expense') {
+        const cat = t.category || 'other_expense';
+        todayCatMap[cat] = (todayCatMap[cat] || 0) + t.amount;
+      }
+    });
+    const todayBreakdown = Object.entries(todayCatMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([key, amount]) => {
+        const info = getCategoryInfo(key);
+        return { key, name: info.name, icon: info.icon, color: info.color || '#6b7280', amount };
+      });
+
     return {
       spentToday,
       receivedToday,
@@ -86,6 +103,7 @@ export default function TodaySection() {
       debtsDueSoonCount,
       mostUsedWallet: mostUsedWallet?.name,
       recentCount: todayTxns.length,
+      todayBreakdown,
     };
   }, [transactions, budgets, debts, accounts, todayDateStr, currentMonthKey, getBudgetStatus, now]);
 
@@ -93,7 +111,7 @@ export default function TodaySection() {
     <div className="today-section-container">
       <div className="today-header">
         <h2 className="today-title">Today's Pulse</h2>
-        <span className="today-date">{now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+        <span className="today-date">Today &bull; {now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
       </div>
       
       <div className="today-grid">
@@ -111,6 +129,22 @@ export default function TodaySection() {
               </div>
             )}
           </div>
+
+          {/* Today's Breakdown — where did it go? */}
+          {data.todayBreakdown.length > 0 && (
+            <div className="today-breakdown">
+              <div className="today-breakdown-title">Where it went</div>
+              <div className="today-breakdown-list">
+                {data.todayBreakdown.map((cat) => (
+                  <div className="today-breakdown-item" key={cat.key}>
+                    <span className="today-breakdown-dot" style={{ background: cat.color }} />
+                    <span className="today-breakdown-name">{cat.name}</span>
+                    <span className="today-breakdown-amount">{mask(cat.amount, currency)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           <div className="today-daily-allowance">
              <div className="allowance-label">Remaining Safe Allowance</div>
@@ -118,9 +152,20 @@ export default function TodaySection() {
           </div>
         </div>
 
-        {/* Actionable secondary grid */}
+        {/* Actionable secondary grid — ordered by urgency */}
         <div className="today-secondary-grid">
-          <div className={`today-mini-card card ${data.pendingCount > 0 ? 'active' : ''}`} onClick={() => navigate('/transactions')}>
+          {/* 🚨 Priority 1: Debts Due — strongest urgency */}
+          <div className={`today-mini-card card mini-debts ${data.debtsDueSoonCount > 0 ? 'urgent' : ''}`} onClick={() => navigate('/debts')}>
+            <span className="mini-icon">🚨</span>
+            <div className="mini-content">
+              <span className="mini-num">{data.debtsDueSoonCount}</span>
+              <span className="mini-label">Debts Due</span>
+            </div>
+            {data.debtsDueSoonCount > 0 && <span className="mini-pulse" />}
+          </div>
+
+          {/* ⚠ Priority 2: Pending — amber warning */}
+          <div className={`today-mini-card card mini-pending ${data.pendingCount > 0 ? 'warning' : ''}`} onClick={() => navigate('/transactions')}>
             <span className="mini-icon">⏳</span>
             <div className="mini-content">
               <span className="mini-num">{data.pendingCount}</span>
@@ -128,27 +173,21 @@ export default function TodaySection() {
             </div>
           </div>
 
-          <div className={`today-mini-card card ${data.debtsDueSoonCount > 0 ? 'urgent' : ''}`} onClick={() => navigate('/debts')}>
-            <span className="mini-icon">🚨</span>
+          {/* 💰 Priority 3: Spending Status */}
+          <div className="today-mini-card card mini-spending" onClick={() => navigate('/transactions')}>
+            <span className="mini-icon">💰</span>
             <div className="mini-content">
-              <span className="mini-num">{data.debtsDueSoonCount}</span>
-              <span className="mini-label">Debts Due</span>
-            </div>
-          </div>
-          
-          <div className="today-mini-card card" onClick={() => navigate('/accounts')}>
-            <span className="mini-icon">💳</span>
-            <div className="mini-content">
-              <span className="mini-num">{data.mostUsedWallet || 'None'}</span>
-              <span className="mini-label">Top Wallet</span>
+              <span className="mini-num">{mask(data.spentToday, currency)}</span>
+              <span className="mini-label">Spent Today</span>
             </div>
           </div>
 
-          <div className="today-mini-card card" onClick={() => navigate('/transactions')}>
-            <span className="mini-icon">⚡</span>
+          {/* 📊 Priority 4: Activity */}
+          <div className="today-mini-card card mini-activity" onClick={() => navigate('/transactions')}>
+            <span className="mini-icon">📊</span>
             <div className="mini-content">
               <span className="mini-num">{data.recentCount}</span>
-              <span className="mini-label">Today's Txns</span>
+              <span className="mini-label">Activity</span>
             </div>
           </div>
         </div>

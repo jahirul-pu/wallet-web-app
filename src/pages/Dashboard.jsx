@@ -125,6 +125,56 @@ export default function Dashboard() {
     return { balance: bal, income: inc, expense: exp, recentTxns: recent };
   }, [transactions, currentMonth]);
 
+  // ── Contextual data for summary cards ──
+  const cardContext = useMemo(() => {
+    const sym = currency?.symbol || '৳';
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // Balance change since yesterday
+    const todayNet = transactions
+      .filter((t) => t.date === todayStr)
+      .reduce((s, t) => {
+        if (t.type === 'income') return s + t.amount;
+        if (t.type === 'expense') return s - t.amount;
+        return s;
+      }, 0);
+    const balDir = todayNet >= 0 ? '↑' : '↓';
+    const balContext = todayNet !== 0
+      ? `${balDir} ${sym}${Math.abs(todayNet).toLocaleString()} since yesterday`
+      : 'No change today';
+
+    // Income source count this month
+    const monthTxns = transactions.filter((t) => {
+      const d = new Date(t.date);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === currentMonth;
+    });
+    const incomeSources = new Set(
+      monthTxns.filter((t) => t.type === 'income').map((t) => t.category || 'other_income')
+    );
+    const incContext = incomeSources.size > 0
+      ? `${incomeSources.size} source${incomeSources.size !== 1 ? 's' : ''} this month`
+      : 'No income yet';
+
+    // Top expense category this month
+    const expCatMap = {};
+    monthTxns.forEach((t) => {
+      if (t.type === 'expense') {
+        const cat = t.category || 'other_expense';
+        expCatMap[cat] = (expCatMap[cat] || 0) + t.amount;
+      }
+    });
+    const topExpCat = Object.entries(expCatMap).sort((a, b) => b[1] - a[1])[0];
+    const expContext = topExpCat
+      ? `Top: ${getCategoryInfo(topExpCat[0]).name}`
+      : 'No expenses yet';
+
+    return { balContext, incContext, expContext };
+  }, [transactions, currency, currentMonth]);
+
   // Analytics computations
   const analytics = useMemo(() => {
     const now = new Date();
@@ -407,6 +457,7 @@ export default function Dashboard() {
             color="#38bdf8"
             onClick={() => navigate('/accounts')}
             subtitle="from last month"
+            contextLine={cardContext.balContext}
           />
           <OverviewCard
             label="Monthly Income"
@@ -416,6 +467,7 @@ export default function Dashboard() {
             color="#34d399"
             onClick={() => navigate('/transactions?type=income')}
             subtitle="this month"
+            contextLine={cardContext.incContext}
           />
           <OverviewCard
             label="Monthly Expense"
@@ -426,6 +478,7 @@ export default function Dashboard() {
             invertChange
             onClick={() => navigate('/transactions?type=expense')}
             subtitle="this month"
+            contextLine={cardContext.expContext}
           />
         </div>
 
@@ -743,17 +796,20 @@ export default function Dashboard() {
                   <div className="analytics-pie-container">
                     <svg viewBox="0 0 100 100" className="analytics-donut">
                       {analytics.pieSegments.map((seg, i) => {
-                         const strokeDasharray = `${seg.percent} ${100 - seg.percent}`;
-                         const strokeDashoffset = 25 - seg.startPercent;
+                         const r = 40;
+                         const c = 2 * Math.PI * r;
+                         const strokeDasharray = `${(seg.percent * c) / 100} ${c}`;
+                         const strokeDashoffset = -(seg.startPercent * c) / 100;
                          return (
                            <circle 
                              key={seg.key}
-                             cx="50" cy="50" r="15.915494309" 
+                             cx="50" cy="50" r={r} 
                              fill="transparent" 
                              stroke={seg.color} 
-                             strokeWidth="5" 
+                             strokeWidth="12" 
                              strokeDasharray={strokeDasharray} 
                              strokeDashoffset={strokeDashoffset}
+                             strokeLinecap="round"
                            />
                          )
                       })}
@@ -836,7 +892,7 @@ function MiniSparkline({ data, color = '#6FFBBE', width = 200, height = 60 }) {
 }
 
 /* ── Overview Stat Card ── */
-function OverviewCard({ label, amount, change, sparkData, color, invertChange, onClick, subtitle }) {
+function OverviewCard({ label, amount, change, sparkData, color, invertChange, onClick, subtitle, contextLine }) {
   const isPositive = invertChange ? change <= 0 : change >= 0;
   const arrow = change >= 0 ? '↑' : '↓';
   const absChange = Math.abs(change);
@@ -864,6 +920,9 @@ function OverviewCard({ label, amount, change, sparkData, color, invertChange, o
             </span>
           )}
         </div>
+        {contextLine && (
+          <div className="fin-overview-context">{contextLine}</div>
+        )}
       </div>
       <div className="fin-overview-spark">
         <MiniSparkline data={sparkData} color={color} />
