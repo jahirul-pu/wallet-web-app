@@ -85,12 +85,18 @@
   }
 
   .app-main {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Fixed viewport height */
     width: 100%;
-    /* height: 100vh; is handled globally but let's confirm */
+    overflow: hidden; /* Prevents body scroll */
   }
   
   .app-content {
-    padding-bottom: var(--bottom-nav-height);
+    flex: 1;
+    overflow-y: auto; /* Internal scrolling only */
+    overflow-x: hidden; /* Prevent horizontal scroll — CSS spec makes overflow-x auto when overflow-y is auto */
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(var(--bottom-nav-height) + var(--space-4));
   }
 }
