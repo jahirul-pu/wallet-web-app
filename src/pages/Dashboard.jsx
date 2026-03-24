@@ -521,70 +521,16 @@ export default function Dashboard() {
             <h1 className="page-title">Dashboard</h1>
           </div>
         </div>
-
-        <TodaySection />
-
-        {/* Row 1 — Financial Overview */}
-        <div className="fin-overview-row">
-          <OverviewCard
-            label="Total Balance"
-            amount={<AnimatedAmount value={balance} currency={currency} />}
-            change={pctChange(balance, balance - (income - expense) + (prevMonth.income - prevMonth.expense))}
-            sparkData={balanceSpark}
-            color="#38bdf8"
-            onClick={() => navigate('/accounts')}
-            subtitle="from last month"
-            contextLine={cardContext.balContext}
-          />
-          <OverviewCard
-            label="Monthly Income"
-            amount={<AnimatedAmount value={income} currency={currency} />}
-            change={pctChange(income, prevMonth.income)}
-            sparkData={incomeSpark}
-            color="#34d399"
-            onClick={() => navigate('/transactions?type=income')}
-            subtitle="this month"
-            contextLine={cardContext.incContext}
-          />
-          <OverviewCard
-            label="Monthly Expense"
-            amount={<AnimatedAmount value={expense} currency={currency} />}
-            change={pctChange(expense, prevMonth.expense)}
-            sparkData={expenseSpark}
-            color="#fb7185"
-            invertChange
-            onClick={() => navigate('/transactions?type=expense')}
-            subtitle="this month"
-            contextLine={cardContext.expContext}
-          />
-        </div>
-
-        {/* Row 2 — Smart Insights */}
-        {insights.length > 0 && (
-          <div className="smart-insights-row">
-            {insights.map((insight, i) => (
-              <div
-                key={i}
-                className={`smart-insight-chip ${insight.type} ${insight.action ? 'has-action' : ''}`}
-                onClick={insight.action ? () => navigate(insight.action) : undefined}
-              >
-                <div className="smart-insight-content">
-                  <span className="smart-insight-icon">{insight.icon}</span>
-                  <span className="smart-insight-text">{insight.text}</span>
-                </div>
-                {insight.actionText && (
-                  <button className="insight-action-btn">{insight.actionText}</button>
-                )}
-              </div>
-            ))}
+        
+        {/* Main Vault Asset & Fast Input System */}
+        <div className="dashboard-col-main" style={{ marginBottom: '24px' }}>
+          <div className="dashboard-hero-date">
+            <span className="today-date-pill">Today &bull; {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
           </div>
-        )}
 
-        {/* Left Column - Main Vault Activity */}
-        <div className="dashboard-col-main">
           <BalanceCard balance={balance} income={income} expense={expense} />
 
-          {/* Fast Input System */}
+          {/* Moved Fast Input System here */}
           <div className="dashboard-section quick-add-section" style={{ animationDelay: '0.08s' }}>
             <div className="dashboard-section-header">
               <h2 className="dashboard-section-title">Fast Input</h2>
@@ -669,7 +615,67 @@ export default function Dashboard() {
                 </div>
               </form>
             )}
+            
+            {qaSuccess && (
+              <div className="fast-success-msg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Transaction added!
+              </div>
+            )}
           </div>
+        </div>
+
+        <TodaySection />
+
+        {/* Row 1 — Financial Overview */}
+        <div className="fin-overview-row">
+          <OverviewCard
+            label="Monthly Income"
+            amount={<AnimatedAmount value={income} currency={currency} />}
+            change={pctChange(income, prevMonth.income)}
+            sparkData={incomeSpark}
+            color="#34d399"
+            onClick={() => navigate('/transactions?type=income')}
+            subtitle="this month"
+            contextLine={cardContext.incContext}
+          />
+          <OverviewCard
+            label="Monthly Expense"
+            amount={<AnimatedAmount value={expense} currency={currency} />}
+            change={pctChange(expense, prevMonth.expense)}
+            sparkData={expenseSpark}
+            color="#fb7185"
+            invertChange
+            onClick={() => navigate('/transactions?type=expense')}
+            subtitle="this month"
+            contextLine={cardContext.expContext}
+          />
+        </div>
+
+        {/* Row 2 — Smart Insights */}
+        {insights.length > 0 && (
+          <div className="smart-insights-row">
+            {insights.map((insight, i) => (
+              <div
+                key={i}
+                className={`smart-insight-chip ${insight.type} ${insight.action ? 'has-action' : ''}`}
+                onClick={insight.action ? () => navigate(insight.action) : undefined}
+              >
+                <div className="smart-insight-content">
+                  <span className="smart-insight-icon">{insight.icon}</span>
+                  <span className="smart-insight-text">{insight.text}</span>
+                </div>
+                {insight.actionText && (
+                  <button className="insight-action-btn">{insight.actionText}</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Left Column - Main Vault Activity */}
+        <div className="dashboard-col-main">
+
 
           {/* My Wallets */}
           <div className="dashboard-section" style={{ animationDelay: '0.12s' }}>

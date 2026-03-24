@@ -111,7 +111,6 @@ export default function TodaySection() {
     <div className="today-section-container">
       <div className="today-header">
         <h2 className="today-title">Today's Pulse</h2>
-        <span className="today-date">Today &bull; {now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
       </div>
       
       <div className="today-grid">
