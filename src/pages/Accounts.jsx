@@ -10,6 +10,7 @@ import { formatAmount } from '../utils/currencies';
 import BottomSheet from '../components/BottomSheet';
 import AccountDropdown from '../components/AccountDropdown';
 import CalculatorInput from '../components/CalculatorInput';
+import { Button } from '@/components/ui/button';
 import './Accounts.css';
 
 const ACCOUNT_ICONS = ['💵', '🏦', '📱', '💳', '💼', '🪙', '💰', '🏧', '👛'];
@@ -625,18 +626,18 @@ export default function Accounts() {
       })()}
 
       {/* Action buttons */}
-      <div className="accounts-actions">
-        <button className="btn btn-primary" onClick={openAddSheet} id="add-account-btn">
+      <div className="accounts-actions mt-4 flex gap-4 w-full">
+        <Button onClick={openAddSheet} id="add-account-btn" className="flex-1">
           + Add Account
-        </button>
-        <button className="btn btn-secondary" onClick={() => {
+        </Button>
+        <Button variant="secondary" onClick={() => {
           setFromAcc(accounts[0]?.id || '');
           setToAcc(accounts[1]?.id || '');
           setShowTransferSheet(true);
-        }}>
+        }} className="flex-1">
           <svg style={{marginRight: '6px'}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 8 16 13"></polyline><line x1="21" y1="8" x2="9" y2="8"></line><polyline points="8 21 3 16 8 11"></polyline><line x1="3" y1="16" x2="15" y2="16"></line></svg>
           Transfer
-        </button>
+        </Button>
       </div>
 
       {/* Add Account Sheet */}
