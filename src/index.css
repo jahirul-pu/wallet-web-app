@@ -25,8 +25,8 @@
   --color-accent-light: rgba(0, 0, 0, 0.08);
   --color-accent-gradient: linear-gradient(135deg, #000000, #262626);
 
-  --color-income: #000000;
-  --color-income-light: rgba(0, 0, 0, 0.08);
+  --color-income: #10b981;
+  --color-income-light: rgba(16, 185, 129, 0.08);
   --color-expense: #ff4d4d;
   --color-expense-light: rgba(255, 77, 77, 0.1);
   --color-transfer: #737373;
@@ -407,7 +407,7 @@ img {
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 6px;
 }
 
 .input-group label {
@@ -418,12 +418,11 @@ img {
 
 .input {
   width: 100%;
-  padding: 14px var(--space-4);
+  padding: 10px 14px;
   background: var(--color-bg-input);
   border: 1px solid transparent;
-  /* Borderless Vault feel */
   border-radius: var(--radius-md);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 

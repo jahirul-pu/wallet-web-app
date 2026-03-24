@@ -157,12 +157,15 @@ export default function AddTransaction() {
 
       <form onSubmit={handleSubmit} className="add-form">
         {/* Amount */}
-        <div className="amount-input-container">
-          <CalculatorInput
-            value={amount}
-            onChange={setAmount}
-            id="amount-input"
-          />
+        <div className="input-group amount-group" style={{ marginBottom: 'var(--space-6)' }}>
+          <label>Amount</label>
+          <div className="amount-input-container">
+            <CalculatorInput
+              value={amount}
+              onChange={setAmount}
+              id="amount-input"
+            />
+          </div>
         </div>
 
         {/* Account */}

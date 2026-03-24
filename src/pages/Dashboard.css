@@ -1,5 +1,6 @@
 #dashboard-page {
   /* Using global container width */
+  display: block;
 }
 
 /* ── Row 1: Financial Overview ── */
@@ -8,7 +9,7 @@
   grid-template-columns: repeat(2, 1fr); /* Changed from 3 to 2 columns */
   gap: var(--space-4);
   width: 100%;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
   overflow: hidden; /* Guard */
 }
@@ -438,7 +439,7 @@
 }
 
 .dashboard-section {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-4);
 }
 
 .dashboard-section .empty-state {
@@ -1014,7 +1015,7 @@ html[data-theme="dark"] .analytics-line-wrapper.modern::before {
   padding: var(--space-4) !important;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-2);
   animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

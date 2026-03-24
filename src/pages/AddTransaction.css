@@ -25,23 +25,22 @@
 }
 
 .type-btn.active.income {
-  background: color-mix(in srgb, var(--color-income) 15%, transparent);
-  color: var(--color-income);
+  background: var(--color-income);
+  color: #fff;
 }
 
 .type-btn.active.expense {
-  background: color-mix(in srgb, var(--color-expense) 15%, transparent);
-  color: var(--color-expense);
+  background: var(--color-expense);
+  color: #fff;
 }
 
 .type-btn.active.transfer {
-  background: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
-  color: var(--color-text-muted);
+  background: var(--color-text-muted);
+  color: #fff;
 }
 
 .amount-input-container {
   text-align: center;
-  margin-bottom: var(--space-6);
 }
 
 .amount-input {
@@ -64,12 +63,12 @@
 .add-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
 }
 
 .submit-btn {
   width: 100%;
-  padding: var(--space-4);
-  font-size: var(--text-base);
+  padding: 12px;
+  font-size: var(--text-sm);
   margin-top: var(--space-4);
 }

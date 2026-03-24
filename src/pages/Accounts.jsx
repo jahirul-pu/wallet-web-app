@@ -264,7 +264,7 @@ export default function Accounts() {
 
   return (
     <div className="page" id="accounts-page">
-      <h1 className="page-title">Wallets</h1>
+      <h1 className="page-title">Accounts</h1>
 
       {/* Net Worth Card — Enhanced */}
       <div className="accounts-total gradient-card">
@@ -484,7 +484,7 @@ export default function Accounts() {
                         className="wallet-context-item danger"
                         onClick={() => {
                           setContextMenuId(null);
-                          if (window.confirm('Are you sure you want to permanently delete this wallet? This action cannot be undone.')) {
+                          if (window.confirm('Are you sure you want to permanently delete this account? This action cannot be undone.')) {
                             deleteAccount(acc.id);
                           }
                         }}
@@ -572,7 +572,7 @@ export default function Accounts() {
                 >
                   <span className="inactive-toggle-left">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" opacity="0.5"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                    Inactive Wallets ({inactiveAccounts.length})
+                    Inactive Accounts ({inactiveAccounts.length})
                   </span>
                   <svg
                     width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -603,7 +603,7 @@ export default function Accounts() {
                       <rect x="1" y="3" width="22" height="5" />
                       <line x1="10" y1="12" x2="14" y2="12" />
                     </svg>
-                    Archived Wallets ({archivedAccounts.length})
+                    Archived Accounts ({archivedAccounts.length})
                   </span>
                   <svg
                     width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -627,7 +627,7 @@ export default function Accounts() {
       {/* Action buttons */}
       <div className="accounts-actions">
         <button className="btn btn-primary" onClick={openAddSheet} id="add-account-btn">
-          + Add Wallet
+          + Add Account
         </button>
         <button className="btn btn-secondary" onClick={() => {
           setFromAcc(accounts[0]?.id || '');
@@ -640,14 +640,14 @@ export default function Accounts() {
       </div>
 
       {/* Add Account Sheet */}
-      <BottomSheet isOpen={showAddSheet} onClose={() => setShowAddSheet(false)} title={editingId ? "Edit Wallet" : "Add Wallet"}>
+      <BottomSheet isOpen={showAddSheet} onClose={() => setShowAddSheet(false)} title={editingId ? "Edit Account" : "Add Account"} centered={true}>
         <div className="sheet-form">
           <div className="input-group">
             <label>Name</label>
             <input className="input" placeholder="e.g. Savings" value={newName} onChange={(e) => setNewName(e.target.value)} />
           </div>
           <div className="input-group">
-            <label>Wallet Tag</label>
+            <label>Account Tag</label>
             <select className="input" style={{ appearance: 'auto' }} value={newType} onChange={(e) => setNewType(e.target.value)}>
               <option value="all">Both Income & Expense</option>
               <option value="income">Income Only</option>
@@ -671,13 +671,13 @@ export default function Accounts() {
             </div>
           </div>
           <button className="btn btn-primary submit-btn" onClick={handleSaveAccount}>
-            {editingId ? 'Save Wallet Changes' : 'Add Wallet'}
+            {editingId ? 'Save Account Changes' : 'Add Account'}
           </button>
         </div>
       </BottomSheet>
 
       {/* Transfer Sheet */}
-      <BottomSheet isOpen={showTransferSheet} onClose={() => setShowTransferSheet(false)} title="Transfer">
+      <BottomSheet isOpen={showTransferSheet} onClose={() => setShowTransferSheet(false)} title="Transfer" centered={true}>
         <div className="sheet-form">
           <div className="input-group" style={{ position: 'relative', zIndex: 10 }}>
             <label>From</label>

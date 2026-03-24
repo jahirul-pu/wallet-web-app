@@ -651,7 +651,7 @@
 .sheet-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .icon-picker {
@@ -701,6 +701,6 @@
 
 .submit-btn {
   width: 100%;
-  padding: var(--space-4);
+  padding: 12px;
   margin-top: var(--space-2);
 }

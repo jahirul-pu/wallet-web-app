@@ -70,6 +70,17 @@
   align-items: center;
 }
 
+@media (min-width: 1024px) {
+  .bottom-sheet-overlay.centered-overlay {
+    padding-left: 260px;
+    transition: padding-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  #root:has(.app-sidebar.collapsed) .bottom-sheet-overlay.centered-overlay {
+    padding-left: 72px;
+  }
+}
+
 .bottom-sheet.centered-modal {
   border-radius: var(--radius-xl);
   max-width: 440px;

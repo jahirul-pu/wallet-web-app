@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransactionStore } from '../stores/useTransactionStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -44,6 +44,16 @@ export default function Dashboard() {
   const [qaExpanded, setQaExpanded] = useState(false);
   const [showLowBalanceWarning, setShowLowBalanceWarning] = useState(false);
   const [analyticsPeriod, setAnalyticsPeriod] = useState('month'); // 'week', 'month', 'last_month'
+  const qaInputRef = useRef(null);
+
+  // Prevent auto-scroll on expansion
+  useEffect(() => {
+    if (qaExpanded && qaInputRef.current) {
+      setTimeout(() => {
+        qaInputRef.current?.focus({ preventScroll: true });
+      }, 50);
+    }
+  }, [qaExpanded]);
 
   const qaCategoryList = useMemo(() => {
     return qaType === 'income' ? getIncomeCategories() : getExpenseCategories();
@@ -523,7 +533,7 @@ export default function Dashboard() {
         </div>
         
         {/* Main Vault Asset & Fast Input System */}
-        <div className="dashboard-col-main" style={{ marginBottom: '24px' }}>
+        <div className="dashboard-col-main" style={{ marginBottom: '16px' }}>
           <div className="dashboard-hero-date">
             <span className="today-date-pill">Today &bull; {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
           </div>
@@ -570,7 +580,7 @@ export default function Dashboard() {
                     onChange={(e) => setQaAmount(e.target.value)}
                     step="any"
                     min="0"
-                    autoFocus
+                    ref={qaInputRef}
                     required
                   />
                 </div>
@@ -677,10 +687,10 @@ export default function Dashboard() {
         <div className="dashboard-col-main">
 
 
-          {/* My Wallets */}
+          {/* My Accounts */}
           <div className="dashboard-section" style={{ animationDelay: '0.12s' }}>
             <div className="dashboard-section-header">
-              <h2 className="dashboard-section-title">My Wallets</h2>
+              <h2 className="dashboard-section-title">My Accounts</h2>
               <button
                 className="btn-link"
                 onClick={() => navigate('/accounts')}
